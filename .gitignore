@@ -1,0 +1,35 @@
+# Local toolchain and downloaded environment
+.proj-env/
+
+# Build output
+backend/target/
+frontend/dist/
+frontend/node_modules/
+frontend/.vite/
+
+# Test output, logs and coverage
+*.log
+logs/
+**/coverage/
+**/jacoco.exec
+backend/surefire-reports/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.history/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local configuration and secrets
+**/application-local.yml
+**/application-local.properties
+.env
+.env.*
+!.env.example
+
+# Upload scratch space
+backend/upload/
