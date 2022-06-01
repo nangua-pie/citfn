@@ -1,0 +1,35 @@
+# Local development profile. Credentials live here but this file only holds
+# placeholders; put real values in application-local.yml (git ignored).
+spring:
+  datasource:
+    driver-class-name: org.mariadb.jdbc.Driver
+    url: jdbc:mariadb://localhost:3306/forum?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: ${FORUM_DB_USERNAME:forum}
+    password: ${FORUM_DB_PASSWORD:}
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      connection-timeout: 30000
+      pool-name: forum-hikari
+  redis:
+    host: ${FORUM_REDIS_HOST:localhost}
+    port: ${FORUM_REDIS_PORT:6379}
+    database: ${FORUM_REDIS_DATABASE:0}
+    password: ${FORUM_REDIS_PASSWORD:}
+    timeout: 5000ms
+    lettuce:
+      pool:
+        max-active: 16
+        max-idle: 8
+        min-idle: 2
+
+forum:
+  minio:
+    endpoint: ${FORUM_MINIO_ENDPOINT:http://localhost:9000}
+    access-key: ${FORUM_MINIO_ACCESS_KEY:}
+    secret-key: ${FORUM_MINIO_SECRET_KEY:}
+    bucket: ${FORUM_MINIO_BUCKET:forum}
+  storage:
+    # Fallback used when object storage is not configured, so local dev still runs.
+    local-directory: ${FORUM_STORAGE_DIR:./upload}
+    public-base-url: ${FORUM_STORAGE_URL:http://localhost:8080/files}

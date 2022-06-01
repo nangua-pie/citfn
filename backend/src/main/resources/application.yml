@@ -1,0 +1,80 @@
+server:
+  port: 8080
+  shutdown: graceful
+  tomcat:
+    max-http-form-post-size: 12MB
+
+spring:
+  application:
+    name: forum-server
+  profiles:
+    active: dev
+  jackson:
+    default-property-inclusion: always
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 12MB
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: true
+  mvc:
+    throw-exception-if-no-handler-found: true
+  web:
+    resources:
+      add-mappings: false
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.forum
+  configuration:
+    map-underscore-to-camel-case: true
+    default-enum-type-handler: org.apache.ibatis.type.EnumOrdinalTypeHandler
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+  global-config:
+    banner: false
+    db-config:
+      # Ids are produced by the application snowflake generator, never by auto increment.
+      id-type: assign_id
+      logic-delete-field: isDeleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+      table-underline: true
+
+knife4j:
+  enable: true
+  setting:
+    language: en
+
+logging:
+  level:
+    root: info
+    com.forum: info
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+forum:
+  jwt:
+    # Must be overridden in application-local.yml; never commit a real secret.
+    secret: ${FORUM_JWT_SECRET:}
+    issuer: forum-server
+    access-token-ttl: 7200
+    refresh-token-ttl: 1209600
+  auth:
+    login-max-attempts: 5
+    login-lock-seconds: 900
+    register-code-ttl: 300
+    login-code-ttl: 300
+  file:
+    max-image-size: 5242880
+    max-file-size: 10485760
+  message:
+    max-text-length: 2000
+    send-limit-per-minute: 30
+    recall-window-seconds: 120
+  sensitive:
+    enabled: true

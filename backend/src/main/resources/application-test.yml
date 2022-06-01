@@ -1,0 +1,20 @@
+# Test profile. Unit and slice tests never start an embedded container, so the
+# datasource and redis settings stay inert.
+spring:
+  datasource:
+    driver-class-name: org.mariadb.jdbc.Driver
+    url: jdbc:mariadb://localhost:3306/forum_test?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: ${FORUM_DB_USERNAME:forum}
+    password: ${FORUM_DB_PASSWORD:}
+  flyway:
+    enabled: false
+  redis:
+    host: localhost
+    port: 6379
+
+forum:
+  jwt:
+    secret: test-only-secret-that-is-long-enough-for-hs256-signing
+    issuer: forum-server-test
+    access-token-ttl: 3600
+    refresh-token-ttl: 7200
