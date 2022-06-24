@@ -21,9 +21,12 @@ public interface PostMapper extends BaseMapper<Post> {
      * Paged post list.
      *
      * <p>Pinned posts sort above everything else, then by newest first.
-     * {@code PostQuery} supplies the optional category, author, keyword,
-     * essential and essential-flag filters, and decides whether posts awaiting
-     * audit are visible.
+     * {@code PostQuery} carries only client supplied filters; visibility is
+     * passed separately so a caller cannot widen it by adding a query
+     * parameter.
+     *
+     * @param includeUnpublished true only for staff holding {@code post:audit}
+     * @param visibleStatus status treated as publicly visible
      */
     @Select("<script>"
             + "SELECT * FROM forum_post WHERE is_deleted = 0 "
@@ -33,15 +36,15 @@ public interface PostMapper extends BaseMapper<Post> {
             + " AND (title LIKE CONCAT('%', #{query.keyword}, '%') "
             + "      OR summary LIKE CONCAT('%', #{query.keyword}, '%')) </if>"
             + "<if test='query.onlyEssential'> AND is_essential = 1 </if>"
-            + "<choose>"
-            + "  <when test='query.includeAllStatuses'> </when>"
-            + "  <otherwise> AND status = #{query.visibleStatus} </otherwise>"
-            + "</choose>"
+            + "<if test='!includeUnpublished'> AND status = #{visibleStatus} </if>"
             + "<if test='query.tagName != null and query.tagName != \"\"'>"
             + " AND id IN (SELECT post_id FROM forum_post_tag WHERE tag_name = #{query.tagName}) </if>"
             + "ORDER BY is_top DESC, create_time DESC, id DESC"
             + "</script>")
-    IPage<Post> selectPostPage(IPage<Post> page, @Param("query") PostQuery query);
+    IPage<Post> selectPostPage(IPage<Post> page,
+                               @Param("query") PostQuery query,
+                               @Param("includeUnpublished") boolean includeUnpublished,
+                               @Param("visibleStatus") Integer visibleStatus);
 
     /** Post plus the body, used by the detail endpoint. */
     @Select("SELECT p.*, c.content_md FROM forum_post p "
@@ -79,10 +82,6 @@ public interface PostMapper extends BaseMapper<Post> {
 
     @Select("SELECT id FROM forum_post_collect WHERE post_id = #{postId} AND user_id = #{userId} LIMIT 1")
     Long selectCollectId(@Param("postId") Long postId, @Param("userId") Long userId);
-
-    /** Tags of a post, ordered by insertion so the order shown is stable. */
-    @Select("SELECT tag_name FROM forum_post_tag WHERE post_id = #{postId} ORDER BY id")
-    List<String> selectTagNames(@Param("postId") Long postId);
 
     @Select("SELECT COUNT(1) FROM forum_post WHERE user_id = #{userId} "
             + "AND is_deleted = 0 AND status = 1")

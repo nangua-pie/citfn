@@ -2,6 +2,7 @@ package com.forum.post.service;
 
 import com.forum.common.api.PageResult;
 import com.forum.post.dto.CreatePostRequest;
+import com.forum.post.dto.LikeResult;
 import com.forum.post.dto.PostQuery;
 import com.forum.post.dto.PostVO;
 import com.forum.post.dto.UpdatePostRequest;

@@ -1,6 +1,7 @@
 package com.forum.post.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.forum.category.entity.Category;
 import com.forum.category.mapper.CategoryMapper;
@@ -93,7 +94,7 @@ public class PostServiceImpl implements PostService {
                 .map(user -> user.hasAuthority(PermissionCodes.POST_AUDIT))
                 .orElse(false);
 
-        Page<Post> result = postMapper.selectPostPage(
+        IPage<Post> result = postMapper.selectPostPage(
                 new Page<>(Pagination.normalizePage(page), Pagination.normalizeSize(size)),
                 query, auditor && includeUnpublished, PostStatus.PUBLISHED.getCode());
         List<PostVO> records = enrich(result.getRecords(), viewerId, false);

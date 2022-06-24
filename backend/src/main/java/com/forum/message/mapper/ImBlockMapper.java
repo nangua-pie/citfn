@@ -13,8 +13,9 @@ import org.apache.ibatis.annotations.Select;
 public interface ImBlockMapper extends BaseMapper<ImBlock> {
 
     /** True when {@code userId} refuses messages from {@code blockedUserId}. */
-    @Select("SELECT COUNT(1) FROM im_block WHERE user_id = #{userId} AND blocked_user_id = #{blockedUserId}")
-    int existsBlock(@Param("userId") Long userId, @Param("blockedUserId") Long blockedUserId);
+    @Select("SELECT COUNT(1) > 0 FROM im_block "
+            + "WHERE user_id = #{userId} AND blocked_user_id = #{blockedUserId}")
+    boolean existsBlock(@Param("userId") Long userId, @Param("blockedUserId") Long blockedUserId);
 
     @Select("SELECT blocked_user_id FROM im_block WHERE user_id = #{userId}")
     java.util.List<Long> selectBlockedUserIds(@Param("userId") Long userId);

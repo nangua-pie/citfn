@@ -47,18 +47,18 @@ public interface ImMessageMapper extends BaseMapper<ImMessage> {
     /**
      * Duplicate-send guard.
      *
-     * <p>Returns the id of an identical message the sender already pushed inside
-     * the idempotency window, so a retried request reuses it instead of
-     * inserting twice.
+     * <p>Returns an identical message the sender already pushed inside the
+     * idempotency window, so a retried request reuses it instead of inserting
+     * twice.
      */
-    @Select("SELECT id FROM im_message WHERE sender_id = #{senderId} AND receiver_id = #{receiverId} "
+    @Select("SELECT * FROM im_message WHERE sender_id = #{senderId} AND receiver_id = #{receiverId} "
             + "AND content = #{content} AND message_type = #{messageType} "
             + "AND is_deleted = 0 AND send_time > #{since} ORDER BY id DESC LIMIT 1")
-    Long selectRecentDuplicate(@Param("senderId") Long senderId,
-                               @Param("receiverId") Long receiverId,
-                               @Param("content") String content,
-                               @Param("messageType") String messageType,
-                               @Param("since") java.time.LocalDateTime since);
+    ImMessage selectRecentDuplicate(@Param("senderId") Long senderId,
+                                    @Param("receiverId") Long receiverId,
+                                    @Param("content") String content,
+                                    @Param("messageType") String messageType,
+                                    @Param("since") java.time.LocalDateTime since);
 
     @Select("SELECT COUNT(1) FROM im_message WHERE receiver_id = #{userId} "
             + "AND is_deleted = 0 AND status IN ('SENT', 'DELIVERED')")

@@ -16,7 +16,8 @@ import java.security.Principal;
 import java.util.List;
 
 /**
- * Authenticates the STOMP handshake and stamps the principal onto every frame.
+ * Authenticates the STOMP handshake, stamps the principal onto every frame and
+ * keeps the online markers in Redis in step with the session lifecycle.
  *
  * <p>SockJS cannot set an {@code Authorization} header on the handshake, so the
  * token arrives as the {@code accessToken} query parameter, exactly as the REST
@@ -31,11 +32,11 @@ public class ImChannelInterceptor implements ChannelInterceptor {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtTokenProvider tokenProvider;
+    private final ImPresenceService presenceService;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
-        StompHeaderAccessor accessor =
-                StompHeaderAccessor.wrap(message, StompHeaderAccessor.SID, message.getHeaders());
+        StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
         StompCommand command = accessor.getCommand();
         if (command == null) {
             return message;
@@ -49,7 +50,10 @@ public class ImChannelInterceptor implements ChannelInterceptor {
             AuthenticatedUser user = tokenProvider.parseAccessToken(token);
             Principal principal = new StompPrincipal(user.getUserId(), user.getUsername());
             accessor.setUser(principal);
-            return MessageBuilder.createMessage(payloadOf(message), accessor.getMessageHeaders());
+            Message<?> authenticated =
+                    MessageBuilder.createMessage(message.getPayload(), accessor.getMessageHeaders());
+            presenceService.markOnline(user.getUserId(), accessor.getSessionId());
+            return authenticated;
         }
 
         // Every later frame must belong to an authenticated session.
@@ -57,11 +61,10 @@ public class ImChannelInterceptor implements ChannelInterceptor {
         if (principal == null) {
             throw new org.springframework.messaging.MessagingException("session is not authenticated");
         }
+        if (StompCommand.DISCONNECT.equals(command) && principal instanceof StompPrincipal) {
+            presenceService.markOffline(((StompPrincipal) principal).getUserId(), accessor.getSessionId());
+        }
         return message;
-    }
-
-    private Object payloadOf(Message<?> message) {
-        return message.getPayload();
     }
 
     private String resolveToken(StompHeaderAccessor accessor) {

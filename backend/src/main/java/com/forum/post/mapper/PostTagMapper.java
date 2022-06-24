@@ -19,6 +19,10 @@ public interface PostTagMapper extends BaseMapper<PostTag> {
     @Delete("DELETE FROM forum_post_tag WHERE post_id = #{postId}")
     int deleteByPostId(@Param("postId") Long postId);
 
+    /** Tags of a post, ordered by insertion so the rendered order is stable. */
+    @Select("SELECT tag_name FROM forum_post_tag WHERE post_id = #{postId} ORDER BY id")
+    List<String> selectTagNames(@Param("postId") Long postId);
+
     @Select("SELECT tag_name, COUNT(1) AS total FROM forum_post_tag "
             + "JOIN forum_post p ON p.id = forum_post_tag.post_id "
             + "AND p.is_deleted = 0 AND p.status = 1 "

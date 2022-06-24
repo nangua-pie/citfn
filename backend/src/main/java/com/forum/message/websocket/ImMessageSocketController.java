@@ -28,23 +28,25 @@ public class ImMessageSocketController {
 
     @MessageMapping("/im.send")
     public ImMessageVO send(@Payload @Valid SendMessageRequest request,
-                            StompPrincipal principal) {
-        if (principal == null) {
-            throw new org.springframework.messaging.MessagingException("session is not authenticated");
-        }
-        return messageService.sendMessage(principal.getUserId(), request);
+                            java.security.Principal principal) {
+        return messageService.sendMessage(requireUserId(principal), request);
     }
 
     /** Convenience endpoint used by the client to acknowledge a receipt. */
     @MessageMapping("/im.read")
-    public void read(@Payload ReadPayload payload, StompPrincipal principal) {
-        if (principal == null) {
+    public void read(@Payload ReadPayload payload, java.security.Principal principal) {
+        if (payload == null || payload.getMessageId() == null) {
+            throw BusinessException.badRequest("messageId is required");
+        }
+        messageService.markMessageRead(requireUserId(principal), payload.getMessageId());
+    }
+
+    /** The handshake interceptor guarantees the principal is a {@link StompPrincipal}. */
+    private Long requireUserId(java.security.Principal principal) {
+        if (!(principal instanceof StompPrincipal)) {
             throw new org.springframework.messaging.MessagingException("session is not authenticated");
         }
-        if (payload == null || payload.getMessageId() == null) {
-            throw new BusinessException.badRequest("messageId is required");
-        }
-        messageService.markMessageRead(principal.getUserId(), payload.getMessageId());
+        return ((StompPrincipal) principal).getUserId();
     }
 
     /** Payload of the {@code /app/im.read} destination. */

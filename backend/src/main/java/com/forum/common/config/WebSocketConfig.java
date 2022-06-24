@@ -2,12 +2,10 @@ package com.forum.common.config;
 
 import com.forum.common.security.JwtTokenProvider;
 import com.forum.message.websocket.ImChannelInterceptor;
-import com.forum.message.websocket.ImWebSocketHandlerDecoratorFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
-import org.springframework.messaging.simp.config.SimpleBrokerMessageBrokerConfigurer;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
@@ -27,7 +25,6 @@ import org.springframework.web.socket.server.standard.ServletServerContainerFact
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final ImChannelInterceptor imChannelInterceptor;
-    private final ImWebSocketHandlerDecoratorFactory handlerDecoratorFactory;
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
@@ -48,13 +45,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
         registration.interceptors(imChannelInterceptor);
-    }
-
-    @Override
-    public void configureClientOutboundChannel(ChannelRegistration registration) {
-        registration.taskExecutor(org.springframework.core.task.SimpleAsyncTaskExecutor
-                .create("im-out-"));
-        registration.handlers(handlerDecoratorFactory.create());
     }
 
     /** Room for the payload size of an image message. */

@@ -40,12 +40,17 @@ public class ApiResponse<T> {
         return new ApiResponse<>(ResultCode.SUCCESS.getCode(), message, data, null);
     }
 
-    public static <T> ApiResponse<T> failure(ResultCode resultCode) {
+    public static ApiResponse<Void> failure(ResultCode resultCode) {
         return failure(resultCode.getCode(), resultCode.getMessage());
     }
 
-    public static <T> ApiResponse<T> failure(int code, String message) {
+    /** Failure envelope with no payload, ready to have a trace id attached. */
+    public static ApiResponse<Void> failure(int code, String message) {
         return new ApiResponse<>(code, message, null, null);
+    }
+
+    public static ApiResponse<Void> failure(ResultCode resultCode, String message) {
+        return new ApiResponse<>(resultCode.getCode(), message, null, null);
     }
 
     /** Attaches the current request trace id, used by the exception handler. */
