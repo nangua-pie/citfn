@@ -108,8 +108,26 @@ public class JwtTokenProvider {
         }
         Long userId = Long.valueOf(claims.getSubject());
         String username = claims.get(CLAIM_USERNAME, String.class);
-        List<String> authorities = claims.get(CLAIM_AUTHORITIES, List.class);
-        return new AuthenticatedUser(userId, username, authorities == null ? List.of() : authorities);
+        return new AuthenticatedUser(userId, username, readAuthorities(claims));
+    }
+
+    /**
+     * JJWT hands back a raw {@link List} for a JSON array claim, so the values
+     * are copied into a typed list rather than cast in place.
+     */
+    @SuppressWarnings("unchecked")
+    private List<String> readAuthorities(Claims claims) {
+        Object raw = claims.get(CLAIM_AUTHORITIES);
+        if (!(raw instanceof List)) {
+            return List.of();
+        }
+        List<String> authorities = new java.util.ArrayList<>();
+        for (Object element : (List<Object>) raw) {
+            if (element != null) {
+                authorities.add(String.valueOf(element));
+            }
+        }
+        return authorities;
     }
 
     /** Returns the subject of a refresh token, or throws when it is not one. */

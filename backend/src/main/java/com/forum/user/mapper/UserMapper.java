@@ -5,6 +5,7 @@ import com.forum.user.entity.User;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
 
@@ -43,4 +44,20 @@ public interface UserMapper extends BaseMapper<User> {
     /** Existence probe used before sending a private message to the receiver. */
     @Select("SELECT COUNT(1) FROM sys_user WHERE id = #{userId} AND is_deleted = 0")
     int existsById(@Param("userId") Long userId);
+
+    /**
+     * Applies a signed point delta without letting the counter go negative.
+     *
+     * <p>Lives in the mapper so the delta stays a bound parameter instead of
+     * being concatenated into SQL text.
+     */
+    @Update("UPDATE sys_user SET points = GREATEST(points + #{delta}, 0) "
+            + "WHERE id = #{userId} AND is_deleted = 0")
+    int adjustPoints(@Param("userId") Long userId, @Param("delta") Integer delta);
+
+    @Select("SELECT points FROM sys_user WHERE id = #{userId} AND is_deleted = 0")
+    Integer selectPoints(@Param("userId") Long userId);
+
+    @Update("UPDATE sys_user SET level = #{level} WHERE id = #{userId} AND is_deleted = 0")
+    int updateLevel(@Param("userId") Long userId, @Param("level") Integer level);
 }
