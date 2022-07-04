@@ -38,7 +38,9 @@ public enum UserStatus {
     }
 
     public boolean canSendPrivateMessage() {
-        return this != BANNED;
+        // A muted account is muted from messaging as well as publishing; only a
+        // fully active account may send, matching the javadoc above.
+        return this == ACTIVE;
     }
 
     public boolean canLogin() {
