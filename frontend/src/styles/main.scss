@@ -1,0 +1,98 @@
+@use './variables.scss' as *;
+
+html {
+  overflow-y: auto;
+}
+
+body {
+  margin: 0;
+  background-color: $surface-muted;
+  color: $text-primary;
+  // The reading surfaces are dense and utilitarian, so typography leads.
+  font-family: 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+// Long identifiers and URLs must wrap rather than widen the layout.
+code, pre {
+  word-break: break-word;
+}
+
+.page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.muted {
+  color: $text-muted;
+}
+
+.text-truncate {
+  @include ellipsis;
+}
+
+// Rendered markdown. Every value reaching v-html has already been through
+// DOMPurify in utils/markdown.ts.
+.markdown-body {
+  line-height: 1.7;
+  word-wrap: break-word;
+
+  h1, h2, h3, h4 {
+    margin: 24px 0 12px;
+    line-height: 1.3;
+  }
+
+  h1 { font-size: 24px; }
+  h2 { font-size: 20px; }
+  h3 { font-size: 17px; }
+
+  p { margin: 12px 0; }
+
+  img {
+    max-width: 100%;
+    border-radius: $radius-md;
+  }
+
+  pre {
+    padding: 12px;
+    overflow-x: auto;
+    background: $surface-muted;
+    border: 1px solid $border;
+    border-radius: $radius-md;
+  }
+
+  code {
+    padding: 2px 4px;
+    background: $surface-muted;
+    border-radius: $radius-sm;
+    font-size: 13px;
+  }
+
+  blockquote {
+    margin: 12px 0;
+    padding-left: 12px;
+    border-left: 3px solid $border;
+    color: $text-muted;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th, td {
+    padding: 8px;
+    border: 1px solid $border;
+  }
+
+  a {
+    color: $accent;
+  }
+}

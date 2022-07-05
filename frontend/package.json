@@ -1,0 +1,33 @@
+{
+  "name": "forum-frontend",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Vue 3 + Vuetify 3 front end for the forum",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "type-check": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@mdi/font": "6.9.96",
+    "@stomp/stompjs": "~6.1.0",
+    "axios": "0.27.2",
+    "dayjs": "1.11.5",
+    "dompurify": "2.3.10",
+    "marked": "4.0.16",
+    "pinia": "2.0.14",
+    "sockjs-client": "1.6.1",
+    "vue": "3.2.37",
+    "vue-router": "4.0.15",
+    "vuetify": "3.0.0-beta.0"
+  },
+  "devDependencies": {
+    "@mdi/js": "6.9.96",
+    "@vitejs/plugin-vue": "2.3.3",
+    "sass": "~1.52.0",
+    "typescript": "~4.7.4",
+    "vite": "2.9.10",
+    "vue-tsc": "0.34.7"
+  }
+}

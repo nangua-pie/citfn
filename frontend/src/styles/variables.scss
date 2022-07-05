@@ -1,0 +1,32 @@
+// Shared SCSS variables, injected into every component by vite.config.ts.
+
+// Reading surfaces stay quiet so content leads; accents are reserved for
+// state (selected, unread, destructive) rather than decoration.
+$surface: #ffffff;
+$surface-muted: #f6f7f9;
+$border: #e2e5ea;
+$text-primary: #1f2430;
+$text-muted: #6b7280;
+
+$accent: #2f6f4f;
+$accent-soft: #e7f2ec;
+$danger: #c0392b;
+$warning: #b8860b;
+
+$radius-sm: 4px;
+$radius-md: 8px;
+
+$header-height: 56px;
+
+@mixin ellipsis {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+@mixin two-line-ellipsis {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
