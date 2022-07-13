@@ -1,6 +1,7 @@
 package com.forum.message.controller;
 
 import com.forum.common.api.ApiResponse;
+import com.forum.common.exception.BusinessException;
 import com.forum.common.security.CurrentUser;
 import com.forum.message.dto.ConversationVO;
 import com.forum.message.dto.ImMessageVO;
@@ -35,6 +36,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MessageController {
 
+    /** Hard ceiling on one history page, matching the service side clamp. */
+    private static final int MAX_PAGE_SIZE = 100;
+
     private final MessageService messageService;
 
     @GetMapping("/conversations")
@@ -65,12 +69,19 @@ public class MessageController {
      *
      * <p>{@code beforeId} is exclusive; pass the smallest id already received to
      * walk backwards. Deep offset paging is intentionally not offered.
+     *
+     * <p>The size bound is checked here rather than relying on the annotation:
+     * Spring 5.3 does not apply method validation to controller parameters, so
+     * {@code @Max} alone would silently do nothing.
      */
     @GetMapping("/conversations/{conversationId}/messages")
     public ApiResponse<List<ImMessageVO>> loadHistory(
             @PathVariable Long conversationId,
             @RequestParam(required = false) Long beforeId,
             @RequestParam(defaultValue = "30") @Min(1) @Max(100) Integer size) {
+        if (size == null || size < 1 || size > MAX_PAGE_SIZE) {
+            throw BusinessException.badRequest("size must be between 1 and " + MAX_PAGE_SIZE);
+        }
         return ApiResponse.success(messageService.loadHistory(
                 CurrentUser.requireUserId(), conversationId, beforeId, size));
     }
