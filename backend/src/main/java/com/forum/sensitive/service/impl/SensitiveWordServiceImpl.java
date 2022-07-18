@@ -36,6 +36,7 @@ public class SensitiveWordServiceImpl implements SensitiveWordService {
         this.enabled = enabled;
     }
 
+    @Override
     @Scheduled(initialDelay = 5_000L, fixedDelay = 300_000L)
     public void refresh() {
         try {

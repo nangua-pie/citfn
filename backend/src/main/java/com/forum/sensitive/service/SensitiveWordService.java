@@ -8,6 +8,14 @@ import java.util.List;
 public interface SensitiveWordService {
 
     /**
+     * Reloads the rule set from the database.
+     *
+     * <p>Called on a timer and after any administrative change so an edit takes
+     * effect immediately rather than at the next refresh.
+     */
+    void refresh();
+
+    /**
      * Replaces every enabled sensitive word with its configured mask.
      *
      * @return the masked text; the input is returned unchanged when filtering is
