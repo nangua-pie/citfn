@@ -7,11 +7,14 @@ import com.forum.message.dto.ConversationVO;
 import com.forum.message.dto.ImMessageVO;
 import com.forum.message.dto.SendMessageRequest;
 import com.forum.message.service.MessageService;
+import com.forum.rbac.entity.PermissionCodes;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -138,6 +141,23 @@ public class MessageController {
         return ApiResponse.success(new OnlineStatusVO(userId, messageService.isOnline(userId)));
     }
 
+    /**
+     * Administrator imposed private messaging ban.
+     *
+     * <p>{@code days} omitted means a permanent ban.
+     */
+    @PatchMapping("/admin/users/{userId}/restriction")
+    @PreAuthorize("hasAuthority('" + PermissionCodes.USER_PRIVATE_MESSAGE_BAN + "')")
+    public ApiResponse<RestrictionStatusVO> setRestriction(
+            @PathVariable Long userId,
+            @RequestParam boolean banned,
+            @RequestParam(required = false) Integer days,
+            @RequestParam(required = false) String reason) {
+        boolean active = messageService.setPrivateMessageBan(
+                CurrentUser.requireUserId(), userId, banned, days, reason);
+        return ApiResponse.success(new RestrictionStatusVO(userId, active));
+    }
+
     /** Small wrappers so the response shape stays stable. */
     public static class UnreadCountVO {
         private final int unreadCount;
@@ -166,6 +186,25 @@ public class MessageController {
 
         public boolean isOnline() {
             return online;
+        }
+    }
+
+    /** Whether a messaging ban is now in force for the user. */
+    public static class RestrictionStatusVO {
+        private final Long userId;
+        private final boolean restricted;
+
+        public RestrictionStatusVO(Long userId, boolean restricted) {
+            this.userId = userId;
+            this.restricted = restricted;
+        }
+
+        public Long getUserId() {
+            return userId;
+        }
+
+        public boolean isRestricted() {
+            return restricted;
         }
     }
 }

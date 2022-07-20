@@ -58,6 +58,14 @@ public class MessageServiceImpl implements MessageService {
     /** Preview length stored on the conversation row. */
     private static final int PREVIEW_LENGTH = 60;
 
+    /** Conversation list cache lifetime; short, because presence changes often. */
+    private static final Duration CONVERSATION_CACHE_TTL = Duration.ofSeconds(60);
+
+    /** Used only to (de)serialize the conversation cache. */
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper =
+            new com.fasterxml.jackson.databind.ObjectMapper()
+                    .findAndRegisterModules();
+
     private final ImConversationMapper conversationMapper;
     private final ImMessageMapper messageMapper;
     private final ImMessageAttachmentMapper attachmentMapper;
@@ -100,15 +108,25 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     public List<ConversationVO> listConversations(Long currentUserId) {
+        // AGENTS.md 6.5 keeps a recent conversation cache in Redis; the
+        // conversation list is read on every message page load but changes far
+        // less often than it is read.
+        String key = RedisKeys.imConversation(currentUserId);
+        List<ConversationVO> cached = readCachedConversations(key);
+        if (cached != null) {
+            return cached;
+        }
+
         List<ImConversation> conversations = conversationMapper.selectListByUser(currentUserId);
         if (conversations.isEmpty()) {
-            return Collections.emptyList();
+            return new ArrayList<>();
         }
         Map<Long, User> peers = loadPeers(conversations, currentUserId);
         List<ConversationVO> result = new ArrayList<>(conversations.size());
         for (ImConversation conversation : conversations) {
             result.add(toConversationVO(conversation, peers.get(conversation.getTargetUserId())));
         }
+        writeCachedConversations(key, result);
         return result;
     }
 
@@ -134,6 +152,7 @@ public class MessageServiceImpl implements MessageService {
             conversation.setIsDeleted(0);
             conversationMapper.updateById(conversation);
         }
+        invalidateConversations(currentUserId);
         return toConversationVO(conversation, target);
     }
 
@@ -148,6 +167,7 @@ public class MessageServiceImpl implements MessageService {
     public void deleteConversation(Long currentUserId, Long conversationId) {
         requireOwnedConversation(currentUserId, conversationId);
         conversationMapper.softDeleteOwned(conversationId, currentUserId);
+        invalidateConversations(currentUserId);
     }
 
     @Override
@@ -258,6 +278,9 @@ public class MessageServiceImpl implements MessageService {
                 message.getId(), preview, now);
         conversationMapper.touchLastMessage(senderConversation.getId(), currentUserId,
                 message.getId(), preview, now);
+        // Both participants' previews just changed.
+        invalidateConversations(receiverId);
+        invalidateConversations(currentUserId);
 
         // 8. Bump the receiver's unread counter.
         conversationMapper.incrementUnread(receiverConversation.getId(), receiverId);
@@ -395,6 +418,44 @@ public class MessageServiceImpl implements MessageService {
         return Boolean.TRUE.equals(redisTemplate.hasKey(RedisKeys.imOnline(userId)));
     }
 
+    @Override
+    @Transactional
+    public boolean setPrivateMessageBan(Long operatorId, Long targetUserId, boolean banned,
+                                         Integer days, String reason) {
+        User target = userMapper.selectById(targetUserId);
+        if (target == null) {
+            throw BusinessException.notFound("user not found");
+        }
+        if (target.getId().equals(operatorId)) {
+            throw BusinessException.badRequest("an administrator cannot ban their own messaging");
+        }
+        ImUserRestriction existing = restrictionMapper.selectByUserId(targetUserId);
+        if (!banned) {
+            if (existing != null) {
+                restrictionMapper.deleteById(existing.getId());
+            }
+            log.info("private messaging ban lifted from user {} by {}", targetUserId, operatorId);
+            return false;
+        }
+
+        ImUserRestriction restriction = existing == null ? new ImUserRestriction() : existing;
+        restriction.setUserId(targetUserId);
+        restriction.setForbidPrivateMessage(1);
+        restriction.setReason(reason);
+        restriction.setOperatorId(operatorId);
+        // A null expiry means the ban does not lift on its own.
+        restriction.setExpiresAt(days == null ? null : LocalDateTime.now().plusDays(days));
+        restriction.setUpdateTime(LocalDateTime.now());
+        if (existing == null) {
+            restriction.setCreateTime(LocalDateTime.now());
+            restrictionMapper.insert(restriction);
+        } else {
+            restrictionMapper.updateById(restriction);
+        }
+        log.info("private messaging ban applied to user {} by {}", targetUserId, operatorId);
+        return true;
+    }
+
     // --- helpers -------------------------------------------------------
 
     /**
@@ -444,6 +505,45 @@ public class MessageServiceImpl implements MessageService {
 
     private void cacheUnread(Long userId, int unread) {
         redisTemplate.opsForValue().set(RedisKeys.imUnread(userId), String.valueOf(unread), Duration.ofHours(6));
+    }
+
+    /**
+     * Drops the cached conversation list.
+     *
+     * <p>Called whenever a conversation row changes, so the list is never more
+     * than one interaction behind. A cache failure must not break the action
+     * that triggered it.
+     */
+    private void invalidateConversations(Long userId) {
+        try {
+            redisTemplate.delete(RedisKeys.imConversation(userId));
+        } catch (RuntimeException ex) {
+            log.debug("failed to invalidate conversation cache for user {}: {}", userId, ex.getMessage());
+        }
+    }
+
+    private List<ConversationVO> readCachedConversations(String key) {
+        try {
+            String json = redisTemplate.opsForValue().get(key);
+            if (json == null) {
+                return null;
+            }
+            return objectMapper.readValue(json,
+                    objectMapper.getTypeFactory().constructCollectionType(List.class, ConversationVO.class));
+        } catch (RuntimeException | com.fasterxml.jackson.core.JsonProcessingException ex) {
+            // An unreadable cache is simply a miss.
+            log.debug("conversation cache read failed: {}", ex.getMessage());
+            return null;
+        }
+    }
+
+    private void writeCachedConversations(String key, List<ConversationVO> conversations) {
+        try {
+            redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(conversations),
+                    CONVERSATION_CACHE_TTL);
+        } catch (RuntimeException | com.fasterxml.jackson.core.JsonProcessingException ex) {
+            log.debug("conversation cache write failed: {}", ex.getMessage());
+        }
     }
 
     private ImConversation newConversation(Long userId, Long targetUserId) {

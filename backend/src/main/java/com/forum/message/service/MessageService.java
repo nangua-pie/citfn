@@ -76,4 +76,15 @@ public interface MessageService {
 
     /** Whether a user currently has an open socket. */
     boolean isOnline(Long userId);
+
+    /**
+     * Administrator imposed private messaging ban.
+     *
+     * <p>{@code days} of {@code null} means a permanent ban. Requires
+     * {@code user:im:ban}.
+     *
+     * @return true when the ban is now in force
+     */
+    boolean setPrivateMessageBan(Long operatorId, Long targetUserId, boolean banned,
+                                  Integer days, String reason);
 }

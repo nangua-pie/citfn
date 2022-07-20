@@ -339,6 +339,68 @@ class MessageServiceImplTest {
                 .isEqualTo(40400);
     }
 
+    // --- administrator private messaging ban --------------------------------
+
+    @Test
+    @DisplayName("an administrator can ban a user from private messaging")
+    void adminCanApplyBan() {
+        when(userMapper.selectById(RECEIVER_ID)).thenReturn(activeUser(RECEIVER_ID));
+        when(restrictionMapper.selectByUserId(RECEIVER_ID)).thenReturn(null);
+        when(restrictionMapper.insert(any(ImUserRestriction.class))).thenAnswer(call -> {
+            ((ImUserRestriction) call.getArgument(0)).setId(1L);
+            return 1;
+        });
+
+        boolean active = service.setPrivateMessageBan(SENDER_ID, RECEIVER_ID, true, 7, "spam");
+
+        assertThat(active).isTrue();
+        ArgumentCaptor<ImUserRestriction> captor = ArgumentCaptor.forClass(ImUserRestriction.class);
+        verify(restrictionMapper).insert(captor.capture());
+        assertThat(captor.getValue().getForbidPrivateMessage()).isEqualTo(1);
+        assertThat(captor.getValue().getExpiresAt()).isAfter(LocalDateTime.now());
+    }
+
+    @Test
+    @DisplayName("omitting the duration makes the ban permanent")
+    void adminBanWithoutDurationIsPermanent() {
+        when(userMapper.selectById(RECEIVER_ID)).thenReturn(activeUser(RECEIVER_ID));
+        when(restrictionMapper.selectByUserId(RECEIVER_ID)).thenReturn(null);
+
+        service.setPrivateMessageBan(SENDER_ID, RECEIVER_ID, true, null, "permanent");
+
+        ArgumentCaptor<ImUserRestriction> captor = ArgumentCaptor.forClass(ImUserRestriction.class);
+        verify(restrictionMapper).insert(captor.capture());
+        assertThat(captor.getValue().getExpiresAt()).isNull();
+    }
+
+    @Test
+    @DisplayName("lifting the ban deletes the existing restriction row")
+    void adminCanLiftBan() {
+        when(userMapper.selectById(RECEIVER_ID)).thenReturn(activeUser(RECEIVER_ID));
+        ImUserRestriction existing = new ImUserRestriction();
+        existing.setId(9L);
+        existing.setUserId(RECEIVER_ID);
+        existing.setForbidPrivateMessage(1);
+        when(restrictionMapper.selectByUserId(RECEIVER_ID)).thenReturn(existing);
+
+        assertThat(service.setPrivateMessageBan(SENDER_ID, RECEIVER_ID, false, null, null)).isFalse();
+
+        verify(restrictionMapper).deleteById(9L);
+    }
+
+    @Test
+    @DisplayName("an administrator cannot ban their own messaging")
+    void adminCannotBanSelf() {
+        when(userMapper.selectById(SENDER_ID)).thenReturn(activeUser(SENDER_ID));
+
+        assertThatThrownBy(() -> service.setPrivateMessageBan(SENDER_ID, SENDER_ID, true, 1, null))
+                .isInstanceOf(BusinessException.class)
+                .extracting("code")
+                .isEqualTo(40000);
+
+        verify(restrictionMapper, never()).insert(any());
+    }
+
     // --- helpers -------------------------------------------------------
 
     private void stubSendHappyPath() {
