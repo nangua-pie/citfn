@@ -2,8 +2,8 @@ package com.forum.message.websocket;
 
 import com.forum.common.security.AuthenticatedUser;
 import com.forum.common.security.JwtTokenProvider;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -25,14 +25,29 @@ import java.util.List;
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class ImChannelInterceptor implements ChannelInterceptor {
 
     private static final String TOKEN_PARAM = "accessToken";
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtTokenProvider tokenProvider;
-    private final ImPresenceService presenceService;
+
+    /**
+     * Resolved lazily on purpose.
+     *
+     * <p>ImPresenceService needs MessagePushService, which needs
+     * SimpMessagingTemplate, which is created by the message broker
+     * configuration that collects this very interceptor. Constructor injecting
+     * the presence service would close that loop and the context would fail to
+     * start with a circular reference.
+     */
+    private final ObjectProvider<ImPresenceService> presenceService;
+
+    public ImChannelInterceptor(JwtTokenProvider tokenProvider,
+                                ObjectProvider<ImPresenceService> presenceService) {
+        this.tokenProvider = tokenProvider;
+        this.presenceService = presenceService;
+    }
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -52,7 +67,7 @@ public class ImChannelInterceptor implements ChannelInterceptor {
             accessor.setUser(principal);
             Message<?> authenticated =
                     MessageBuilder.createMessage(message.getPayload(), accessor.getMessageHeaders());
-            presenceService.markOnline(user.getUserId(), accessor.getSessionId());
+            presenceService.getObject().markOnline(user.getUserId(), accessor.getSessionId());
             return authenticated;
         }
 
@@ -62,7 +77,8 @@ public class ImChannelInterceptor implements ChannelInterceptor {
             throw new org.springframework.messaging.MessagingException("session is not authenticated");
         }
         if (StompCommand.DISCONNECT.equals(command) && principal instanceof StompPrincipal) {
-            presenceService.markOffline(((StompPrincipal) principal).getUserId(), accessor.getSessionId());
+            presenceService.getObject()
+                    .markOffline(((StompPrincipal) principal).getUserId(), accessor.getSessionId());
         }
         return message;
     }

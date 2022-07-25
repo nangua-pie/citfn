@@ -24,6 +24,12 @@ spring:
     validate-on-migrate: true
   mvc:
     throw-exception-if-no-handler-found: true
+    pathmatch:
+      # Knife4j 3.0.3 wraps Springfox 3, which cannot introspect the
+      # PathPatternParser that Spring Boot 2.6+ defaults to; the bootstrapper
+      # fails with a NullPointerException. Ant matching keeps the pinned
+      # Knife4j version working and binds "{postId}" style path variables.
+      matching-strategy: ant_path_matcher
 
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml
