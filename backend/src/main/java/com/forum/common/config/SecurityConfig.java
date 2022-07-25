@@ -68,6 +68,7 @@ public class SecurityConfig {
                         .antMatchers(HttpMethod.POST,
                                 "/api/auth/register",
                                 "/api/auth/login",
+                                "/api/auth/code",
                                 "/api/auth/refresh").permitAll()
                         // WebSocket handshake: the token arrives as a query parameter.
                         .antMatchers("/ws/**").permitAll()
