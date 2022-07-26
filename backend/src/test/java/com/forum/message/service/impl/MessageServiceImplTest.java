@@ -238,7 +238,7 @@ class MessageServiceImplTest {
                 // 40400 rather than 40300 so an id cannot be probed for existence.
                 .isEqualTo(40400);
 
-        verify(messageMapper, never()).selectHistoryBefore(anyLong(), any(), anyInt());
+        verify(messageMapper, never()).selectHistoryBefore(anyLong(), anyLong(), any(), anyInt());
     }
 
     @Test
@@ -248,7 +248,7 @@ class MessageServiceImplTest {
                 .thenReturn(conversation());
         ImMessage newer = message(20L, "second");
         ImMessage older = message(10L, "first");
-        when(messageMapper.selectHistoryBefore(CONVERSATION_ID, 30L, 100))
+        when(messageMapper.selectHistoryBefore(CONVERSATION_ID, CONVERSATION_ID, 30L, 100))
                 .thenReturn(java.util.Arrays.asList(newer, older));
         when(attachmentMapper.selectByMessageIds(any())).thenReturn(Collections.emptyList());
 
@@ -258,7 +258,7 @@ class MessageServiceImplTest {
         assertThat(result.get(0).getMessageId()).isEqualTo(10L);
         assertThat(result.get(1).getMessageId()).isEqualTo(20L);
         // 5000 is clamped to the 100 row ceiling.
-        verify(messageMapper).selectHistoryBefore(CONVERSATION_ID, 30L, 100);
+        verify(messageMapper).selectHistoryBefore(CONVERSATION_ID, CONVERSATION_ID, 30L, 100);
     }
 
     @Test

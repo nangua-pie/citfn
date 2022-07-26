@@ -172,9 +172,16 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     public List<ImMessageVO> loadHistory(Long currentUserId, Long conversationId, Long beforeId, Integer size) {
-        requireOwnedConversation(currentUserId, conversationId);
+        ImConversation conversation = requireOwnedConversation(currentUserId, conversationId);
         int pageSize = size == null || size < 1 ? 30 : Math.min(size, 100);
-        List<ImMessage> rows = messageMapper.selectHistoryBefore(conversationId, beforeId, pageSize);
+        // Each side owns a conversation row, and a message is filed under its
+        // sender's row, so both rows have to be read or the reader would only
+        // see their own half of the thread.
+        ImConversation peerRow =
+                conversationMapper.selectByParticipants(conversation.getTargetUserId(), currentUserId);
+        Long peerConversationId = peerRow == null ? conversationId : peerRow.getId();
+        List<ImMessage> rows =
+                messageMapper.selectHistoryBefore(conversationId, peerConversationId, beforeId, pageSize);
         if (rows.isEmpty()) {
             return Collections.emptyList();
         }
@@ -219,8 +226,10 @@ public class MessageServiceImpl implements MessageService {
         assertNotRestricted(currentUserId);
         assertNotRestricted(receiverId);
 
-        // 4. The receiver may have blocked the sender.
-        if (blockMapper.existsBlock(receiverId, currentUserId)) {
+        // 4. A block stops traffic in either direction, so both orientations
+        //    are checked: the receiver blocking the sender, and vice versa.
+        if (blockMapper.existsBlock(receiverId, currentUserId)
+                || blockMapper.existsBlock(currentUserId, receiverId)) {
             throw BusinessException.forbidden("this user does not accept private messages");
         }
 
@@ -261,7 +270,9 @@ public class MessageServiceImpl implements MessageService {
 
         LocalDateTime now = LocalDateTime.now();
         ImMessage message = new ImMessage();
-        message.setConversationId(receiverConversation.getId());
+        // Filed under the sender's own conversation row; readers query both
+        // rows of the pair, so either side sees the whole thread.
+        message.setConversationId(senderConversation.getId());
         message.setSenderId(currentUserId);
         message.setReceiverId(receiverId);
         message.setMessageType(messageType.name());
@@ -314,8 +325,12 @@ public class MessageServiceImpl implements MessageService {
             return;
         }
         LocalDateTime now = LocalDateTime.now();
-        messageMapper.markConversationRead(message.getConversationId(), currentUserId, now);
-        conversationMapper.clearUnread(message.getConversationId(), currentUserId);
+        messageMapper.markSingleRead(messageId, currentUserId, now);
+        // The unread badge lives on the reader's own conversation row.
+        ImConversation mine = conversationMapper.selectByParticipants(currentUserId, message.getSenderId());
+        if (mine != null) {
+            conversationMapper.clearUnread(mine.getId(), currentUserId);
+        }
         cacheUnread(currentUserId, conversationMapper.sumUnread(currentUserId));
         pushService.pushMessageRead(message.getSenderId(), messageId, message.getConversationId());
     }
@@ -325,7 +340,9 @@ public class MessageServiceImpl implements MessageService {
     public void markConversationRead(Long currentUserId, Long conversationId) {
         ImConversation conversation = requireOwnedConversation(currentUserId, conversationId);
         LocalDateTime now = LocalDateTime.now();
-        messageMapper.markConversationRead(conversationId, currentUserId, now);
+        ImConversation peer = conversationMapper.selectByParticipants(conversation.getTargetUserId(), currentUserId);
+        messageMapper.markConversationRead(conversationId,
+                peer == null ? conversationId : peer.getId(), currentUserId, now);
         conversationMapper.clearUnread(conversationId, currentUserId);
         int unread = conversationMapper.sumUnread(currentUserId);
         cacheUnread(currentUserId, unread);

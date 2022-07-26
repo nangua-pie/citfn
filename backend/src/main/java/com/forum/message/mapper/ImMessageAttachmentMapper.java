@@ -17,8 +17,17 @@ public interface ImMessageAttachmentMapper extends BaseMapper<ImMessageAttachmen
     @Select("SELECT * FROM im_message_attachment WHERE message_id = #{messageId} ORDER BY sort_order, id")
     List<ImMessageAttachment> selectByMessageId(@Param("messageId") Long messageId);
 
-    @Select("SELECT * FROM im_message_attachment WHERE message_id IN "
+    /**
+     * Bulk attachment lookup.
+     *
+     * <p>The {@code <script>} wrapper is required: without it the
+     * {@code <foreach>} is not parsed and MyBatis fails at runtime with
+     * "Parameter 'id' not found".
+     */
+    @Select("<script>"
+            + "SELECT * FROM im_message_attachment WHERE message_id IN "
             + "<foreach collection='messageIds' item='id' open='(' separator=',' close=')'>#{id}</foreach> "
-            + "ORDER BY message_id, sort_order, id")
+            + "ORDER BY message_id, sort_order, id"
+            + "</script>")
     List<ImMessageAttachment> selectByMessageIds(@Param("messageIds") List<Long> messageIds);
 }

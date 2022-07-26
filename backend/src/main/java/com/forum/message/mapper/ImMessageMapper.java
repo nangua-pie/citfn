@@ -23,21 +23,42 @@ public interface ImMessageMapper extends BaseMapper<ImMessage> {
      * Newest-first page of history strictly older than {@code beforeId}.
      * The returned list is reversed by the service so the client receives
      * ascending order.
+     *
+     * <p>Each user owns a conversation row for the same pair, and a message is
+     * filed under its sender's row, so a reader has to look at both rows or
+     * they would only ever see what they sent.
      */
-    @Select("SELECT * FROM im_message WHERE conversation_id = #{conversationId} AND is_deleted = 0 "
+    @Select("SELECT * FROM im_message "
+            + "WHERE conversation_id IN (#{conversationId}, #{peerConversationId}) AND is_deleted = 0 "
             + "AND (#{beforeId} IS NULL OR id < #{beforeId}) "
             + "ORDER BY id DESC LIMIT #{size}")
     List<ImMessage> selectHistoryBefore(@Param("conversationId") Long conversationId,
+                                        @Param("peerConversationId") Long peerConversationId,
                                         @Param("beforeId") Long beforeId,
                                         @Param("size") Integer size);
 
-    /** Marks every message the receiver has not read yet as read. */
+    /**
+     * Marks every message the reader has not read yet as read.
+     *
+     * <p>Spans both conversation rows of the pair for the same reason history
+     * does: a message is filed under its sender's row.
+     */
     @Update("UPDATE im_message SET status = 'READ', read_time = #{readTime} "
-            + "WHERE conversation_id = #{conversationId} AND receiver_id = #{readerId} "
+            + "WHERE conversation_id IN (#{conversationId}, #{peerConversationId}) "
+            + "AND receiver_id = #{readerId} "
             + "AND is_deleted = 0 AND status IN ('SENT', 'DELIVERED')")
     int markConversationRead(@Param("conversationId") Long conversationId,
+                             @Param("peerConversationId") Long peerConversationId,
                              @Param("readerId") Long readerId,
                              @Param("readTime") java.time.LocalDateTime readTime);
+
+    /** Marks a single message read, for the receipt on one bubble. */
+    @Update("UPDATE im_message SET status = 'READ', read_time = #{readTime} "
+            + "WHERE id = #{messageId} AND receiver_id = #{readerId} "
+            + "AND is_deleted = 0 AND status IN ('SENT', 'DELIVERED')")
+    int markSingleRead(@Param("messageId") Long messageId,
+                       @Param("readerId") Long readerId,
+                       @Param("readTime") java.time.LocalDateTime readTime);
 
     @Update("UPDATE im_message SET status = 'RECALLED', recall_time = #{recallTime}, content = '' "
             + "WHERE id = #{messageId} AND is_deleted = 0")
