@@ -1,6 +1,7 @@
 package com.forum.common.api;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,9 +22,15 @@ import java.util.stream.Collectors;
 public class PageResult<T> {
 
     private List<T> records;
+    // Counts and page numbers are small, so they stay JSON numbers; only
+    // identifiers need string form to survive a JavaScript client.
+    @JsonSerialize(using = LongAsNumberSerializer.class)
     private long total;
+    @JsonSerialize(using = LongAsNumberSerializer.class)
     private long page;
+    @JsonSerialize(using = LongAsNumberSerializer.class)
     private long size;
+    @JsonSerialize(using = LongAsNumberSerializer.class)
     private long pages;
 
     public static <T> PageResult<T> of(List<T> records, long total, long page, long size) {
