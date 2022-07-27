@@ -30,6 +30,13 @@
         <lombok.version>1.18.24</lombok.version>
         <mapstruct.version>1.5.2.Final</mapstruct.version>
         <knife4j.version>3.0.3</knife4j.version>
+        <!--
+          Flyway 8.x moved MySQL and MariaDB out of flyway-core into a separate
+          module, so flyway-core alone aborts with "Unsupported Database:
+          MariaDB 10.6". flyway-mysql below restores it. 8.5.13 is the last
+          8.5.x release, so the AGENTS.md "Flyway 8.5.x" pin still holds.
+        -->
+        <flyway.version>8.5.13</flyway.version>
     </properties>
 
     <dependencies>
@@ -80,6 +87,11 @@
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
+        </dependency>
+        <!-- MySQL / MariaDB support, split out of flyway-core in Flyway 8.x. -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-mysql</artifactId>
         </dependency>
 
         <!-- Redis -->
