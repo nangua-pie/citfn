@@ -110,6 +110,8 @@ public class PostServiceImpl implements PostService {
         assertVisible(post, viewerId);
         PostContent content = contentMapper.selectByPostId(postId);
         postMapper.incrementViewCount(postId);
+        // Count this view, so the number shown matches what the counter holds.
+        post.setViewCount((post.getViewCount() == null ? 0 : post.getViewCount()) + 1);
 
         PostVO vo = toVO(post);
         vo.setContentMd(content == null ? "" : content.getContentMd());
