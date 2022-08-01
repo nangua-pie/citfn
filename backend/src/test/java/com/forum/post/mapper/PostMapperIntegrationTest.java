@@ -34,7 +34,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * green on a machine with no database. Point it at a scratch schema and the
  * suite runs for real.
  */
-@SpringBootTest
+// A real embedded Tomcat is required: the WebSocket container bean only
+// initialises inside a genuine servlet container.
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @Transactional
 @EnabledIfEnvironmentVariable(named = "FORUM_DB_PASSWORD", matches = ".+")

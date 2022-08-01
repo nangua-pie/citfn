@@ -7,7 +7,9 @@ spring:
     username: ${FORUM_DB_USERNAME:forum}
     password: ${FORUM_DB_PASSWORD:}
   flyway:
-    enabled: false
+    # Enabled so the mapper integration tests run against a real schema built
+    # from the same migrations as production.
+    enabled: true
   redis:
     host: localhost
     port: 6379
