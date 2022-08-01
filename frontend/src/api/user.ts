@@ -1,7 +1,7 @@
 import { get, put } from './http'
 import type { UserProfile } from '@/types'
 
-export function getProfile(userId: number) {
+export function getProfile(userId: string) {
   return get<UserProfile>(`/api/users/${userId}/profile`)
 }
 

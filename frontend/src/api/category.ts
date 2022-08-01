@@ -5,6 +5,6 @@ export function listCategories() {
   return get<Category[]>('/api/categories')
 }
 
-export function getCategory(id: number) {
+export function getCategory(id: string) {
   return get<Category>(`/api/categories/${id}`)
 }

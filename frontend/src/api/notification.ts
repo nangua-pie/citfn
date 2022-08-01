@@ -11,7 +11,7 @@ export function notificationUnreadCount() {
   return get<number>('/api/notifications/unread-count')
 }
 
-export function markNotificationRead(id: number) {
+export function markNotificationRead(id: string) {
   return post<void>(`/api/notifications/${id}/read`)
 }
 

@@ -4,6 +4,10 @@
  * These mirror the unified response envelope from AGENTS.md section 7 and the
  * projections returned by the backend, so a change on either side shows up as
  * a type error rather than a runtime surprise.
+ *
+ * Identifiers are strings, not numbers: they are 64 bit snowflake values that
+ * exceed JavaScript's safe integer range, so the backend emits them as JSON
+ * strings to keep them exact. Paging counters stay numbers.
  */
 
 export interface ApiResponse<T> {
@@ -29,7 +33,7 @@ export interface TokenResponse {
 }
 
 export interface UserProfile {
-  id: number
+  id: string
   username: string
   nickname: string
   avatarUrl: string | null
@@ -41,7 +45,7 @@ export interface UserProfile {
 }
 
 export interface Category {
-  id: number
+  id: string
   name: string
   description: string | null
   icon: string | null
@@ -52,10 +56,10 @@ export interface Category {
 }
 
 export interface Post {
-  id: number
-  categoryId: number
+  id: string
+  categoryId: string
   categoryName?: string | null
-  userId: number
+  userId: string
   authorNickname?: string | null
   authorAvatarUrl?: string | null
   title: string
@@ -78,14 +82,14 @@ export interface Post {
 }
 
 export interface Comment {
-  id: number
-  postId: number
-  userId: number
+  id: string
+  postId: string
+  userId: string
   authorNickname: string | null
   authorAvatarUrl: string | null
-  parentId: number | null
-  rootId: number | null
-  replyUserId: number | null
+  parentId: string | null
+  rootId: string | null
+  replyUserId: string | null
   replyToNickname: string | null
   content: string
   likeCount: number
@@ -101,12 +105,12 @@ export interface LikeResult {
 }
 
 export interface Conversation {
-  id: number
-  userId: number
-  targetUserId: number
+  id: string
+  userId: string
+  targetUserId: string
   targetNickname: string | null
   targetAvatarUrl: string | null
-  lastMessageId: number | null
+  lastMessageId: string | null
   lastMessagePreview: string | null
   lastMessageTime: string | null
   unreadCount: number
@@ -126,10 +130,10 @@ export type MessageStatus = 'SENT' | 'DELIVERED' | 'READ' | 'RECALLED'
 export type MessageType = 'TEXT' | 'IMAGE' | 'FILE' | 'SYSTEM'
 
 export interface ImMessage {
-  messageId: number
-  conversationId: number
-  senderId: number
-  receiverId: number
+  messageId: string
+  conversationId: string
+  senderId: string
+  receiverId: string
   messageType: MessageType
   content: string
   extra: string | null
@@ -141,18 +145,18 @@ export interface ImMessage {
 }
 
 export interface Notification {
-  id: number
+  id: string
   type: string
   title: string
   content: string | null
   targetType: string | null
-  targetId: number | null
+  targetId: string | null
   isRead: number
   createTime: string
 }
 
 export interface UploadedFile {
-  id: number
+  id: string
   originalName: string
   url: string
   contentType: string | null

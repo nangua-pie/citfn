@@ -3,21 +3,21 @@ import type { PageResult } from '@/types'
 
 export interface ReportPayload {
   targetType: 'POST' | 'COMMENT'
-  targetId: number
+  targetId: string
   reasonCode: string
   reasonDetail?: string
 }
 
 export interface ReportRecord {
-  id: number
+  id: string
   targetType: string
-  targetId: number
-  reporterId: number
+  targetId: string
+  reporterId: string
   reporterNickname: string | null
   reasonCode: string
   reasonDetail: string | null
   status: number
-  handleUserId: number | null
+  handleUserId: string | null
   handleTime: string | null
   handleNote: string | null
   createTime: string
@@ -33,6 +33,6 @@ export function listReports(status?: number, page = 1, size = 20) {
   })
 }
 
-export function handleReport(id: number, accept: boolean, note?: string) {
+export function handleReport(id: string, accept: boolean, note?: string) {
   return patch<void>(`/api/reports/${id}`, undefined, { params: { accept, note } })
 }
