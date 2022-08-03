@@ -11,6 +11,14 @@ const apiTarget = process.env.VITE_DEV_API_TARGET || 'http://localhost:8080'
 // between releases, and an explicit import list keeps the build deterministic.
 export default defineConfig({
   plugins: [vue()],
+  // sockjs-client references the Node-only `global` identifier, which does not
+  // exist in a browser. Without this the bundle throws
+  // "ReferenceError: global is not defined" the moment the socket module loads,
+  // which takes the whole page down. Mapping it to globalThis fixes both the dev
+  // server and the production bundle.
+  define: {
+    global: 'globalThis',
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
