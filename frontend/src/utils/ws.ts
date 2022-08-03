@@ -1,5 +1,9 @@
 import { Client, type IMessage, type StompSubscription } from '@stomp/stompjs'
-import SockJS from 'sockjs-client'
+// The package's `main` is its Node entry, which calls util.inherits and other
+// Node built-ins. Its `browser` field only remaps a few sub-paths and never
+// redirects the entry, so bundlers pull in Node code that throws in a browser.
+// dist/sockjs.js is the pre-built browser bundle and has no such dependency.
+import SockJS from 'sockjs-client/dist/sockjs'
 
 import { tokenStorage } from '@/api/http'
 import type { ImEvent } from '@/types'
