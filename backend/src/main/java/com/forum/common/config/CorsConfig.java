@@ -20,15 +20,29 @@ import java.util.stream.Collectors;
 @Configuration
 public class CorsConfig {
 
+    /**
+     * Both loopback spellings are allowed by default.
+     *
+     * <p>Browsers treat {@code localhost} and {@code 127.0.0.1} as different
+     * origins, so allowing only one makes the other fail the preflight with a
+     * bare 403 that looks nothing like a CORS problem.
+     */
     @Bean
-    public CorsFilter corsFilter(@Value("${forum.cors.allowed-origins:http://localhost:5173}")
-                                 String allowedOrigins) {
+    public CorsFilter corsFilter(@Value("${forum.cors.allowed-origins:"
+            + "http://localhost:5173,http://127.0.0.1:5173}") String allowedOrigins) {
         CorsConfiguration configuration = new CorsConfiguration();
         List<String> origins = Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)
                 .filter(origin -> !origin.isEmpty())
                 .collect(Collectors.toList());
-        configuration.setAllowedOrigins(origins);
+        // A pattern such as http://127.0.0.1:[*] has to go through
+        // setAllowedOriginPatterns; setAllowedOrigins rejects wildcards outright.
+        boolean wildcard = origins.stream().anyMatch(origin -> origin.contains("*"));
+        if (wildcard) {
+            configuration.setAllowedOriginPatterns(origins);
+        } else {
+            configuration.setAllowedOrigins(origins);
+        }
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("X-Trace-Id"));

@@ -24,6 +24,10 @@ spring:
         min-idle: 2
 
 forum:
+  cors:
+    # Any loopback port is accepted in development so moving the Vite dev
+    # server off 5173 does not turn every request into a bare 403.
+    allowed-origins: "http://localhost:[*],http://127.0.0.1:[*]"
   minio:
     endpoint: ${FORUM_MINIO_ENDPOINT:http://localhost:9000}
     access-key: ${FORUM_MINIO_ACCESS_KEY:}
