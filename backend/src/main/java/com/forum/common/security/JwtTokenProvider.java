@@ -70,6 +70,11 @@ public class JwtTokenProvider {
         return Jwts.builder()
                 .setIssuer(issuer)
                 .setSubject(String.valueOf(userId))
+                // A unique id per token. Without it, two tokens minted for the
+                // same user inside the same second are byte-identical, so their
+                // SHA-256 fingerprints collide and sys_token.uk_token_hash
+                // rejects the second login.
+                .setId(java.util.UUID.randomUUID().toString())
                 .setIssuedAt(now)
                 .setExpiration(expiry)
                 .claim(CLAIM_USERNAME, username)

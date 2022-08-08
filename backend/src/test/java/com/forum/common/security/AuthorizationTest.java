@@ -182,6 +182,19 @@ class AuthorizationTest {
         }
 
         @Test
+        @DisplayName("two tokens minted in the same instant still differ")
+        void tokensAreUniquePerIssue() {
+            // Both calls land in the same second, so without a unique id claim
+            // the tokens would be byte-identical and the stored refresh token
+            // hash would violate uk_token_hash on the second login.
+            String first = tokenProvider.createRefreshToken(7L, "alice");
+            String second = tokenProvider.createRefreshToken(7L, "alice");
+
+            assertThat(first).isNotEqualTo(second);
+            assertThat(tokenProvider.fingerprint(first)).isNotEqualTo(tokenProvider.fingerprint(second));
+        }
+
+        @Test
         @DisplayName("a short signing secret fails fast at construction")
         void shortSecretRejected() {
             assertThatThrownBy(() -> new JwtTokenProvider("too-short", "forum-server-test", 3600, 7200))
