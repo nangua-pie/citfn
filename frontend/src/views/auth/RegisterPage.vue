@@ -80,7 +80,7 @@ async function submit() {
           :type="showPassword ? 'text' : 'password'"
           autocomplete="new-password"
         />
-        <v-alert v-if="error" type="error" variant="tonal" density="compact" class="mb-4">{{ error }}</v-alert>
+        <v-alert v-if="error" type="error" variant="outlined" density="compact" class="mb-4">{{ error }}</v-alert>
         <v-btn type="submit" color="primary" block :loading="auth.loading">Create account</v-btn>
       </v-form>
 

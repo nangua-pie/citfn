@@ -28,6 +28,8 @@ export default createVuetify({
     VBtn: { rounded: 'md', style: 'text-transform: none; letter-spacing: 0;' },
     VTextField: { variant: 'outlined', density: 'comfortable' },
     VTextarea: { variant: 'outlined', density: 'comfortable' },
-    VSelect: { variant: 'outlined', density: 'comfortable' },
+    // 3.0.0-beta.0's VSelect has no `density` prop; setting one here would
+    // fall through to the DOM as a stray attribute on every select.
+    VSelect: { variant: 'outlined' },
   },
 })

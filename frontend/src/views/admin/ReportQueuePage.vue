@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import dayjs from 'dayjs'
 
 import { handleReport, listReports } from '@/api/report'
+import { selectOptions } from '@/utils/select'
 import type { ReportRecord } from '@/api/report'
 
 const reports = ref<ReportRecord[]>([])
@@ -15,6 +16,15 @@ const statusLabels: Record<number, string> = {
   1: 'Accepted',
   2: 'Rejected',
 }
+
+// beta.0's select reads `title` / `value` off each option; there is no
+// `items` prop for object shapes in its published types, see utils/select.ts.
+const statusChoices = selectOptions([
+  { title: 'Pending', value: 0 },
+  { title: 'Accepted', value: 1 },
+  { title: 'Rejected', value: 2 },
+  { title: 'All', value: undefined },
+])
 
 async function load() {
   loading.value = true
@@ -44,20 +54,14 @@ onMounted(load)
       <v-spacer />
       <v-select
         v-model="status"
-        :items="[
-          { title: 'Pending', value: 0 },
-          { title: 'Accepted', value: 1 },
-          { title: 'Rejected', value: 2 },
-          { title: 'All', value: undefined },
-        ]"
-        density="compact"
+        :items="statusChoices"
         hide-details
         style="max-width: 160px"
         @change="load"
       />
     </div>
 
-    <v-alert v-if="error" type="error" variant="tonal" class="mb-4">{{ error }}</v-alert>
+    <v-alert v-if="error" type="error" variant="outlined" class="mb-4">{{ error }}</v-alert>
 
     <v-card class="queue-card">
       <div v-if="loading" class="pa-6 text-center">

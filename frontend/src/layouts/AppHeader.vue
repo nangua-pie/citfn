@@ -64,8 +64,13 @@ onMounted(loadCategories)
       <v-spacer />
 
       <v-menu v-if="categories.length" open-on-hover>
-        <template #activator="{ on, attrs }">
-          <v-btn text small v-bind="attrs" v-on="on" class="mr-2">Boards</v-btn>
+        <!--
+          Vuetify 3.0.0-beta.0 exposes the activator handlers as one `props`
+          object. The stable 3.x `{ on, attrs }` pair does not exist in this
+          version, and binding `undefined` would leave the trigger inert.
+        -->
+        <template #activator="{ props: activatorProps }">
+          <v-btn variant="text" size="small" v-bind="activatorProps" class="mr-2">Boards</v-btn>
         </template>
         <v-list dense>
           <v-list-item
@@ -85,10 +90,10 @@ onMounted(loadCategories)
             <v-icon>mdi-message-text-outline</v-icon>
           </v-badge>
         </v-btn>
-        <v-btn text small :to="{ name: 'post-create' }" class="mr-2">New post</v-btn>
+        <v-btn variant="text" size="small" :to="{ name: 'post-create' }" class="mr-2">New post</v-btn>
         <v-menu>
-          <template #activator="{ on, attrs }">
-            <v-btn icon variant="text" v-bind="attrs" v-on="on">
+          <template #activator="{ props: activatorProps }">
+            <v-btn icon variant="text" v-bind="activatorProps">
               <v-avatar size="28">
                 <v-img v-if="auth.profile?.avatarUrl" :src="auth.profile.avatarUrl" />
                 <span v-else>{{ auth.profile?.nickname?.charAt(0) }}</span>
@@ -110,7 +115,7 @@ onMounted(loadCategories)
         </v-menu>
       </template>
       <template v-else>
-        <v-btn text small :to="{ name: 'login' }">Sign in</v-btn>
+        <v-btn variant="text" size="small" :to="{ name: 'login' }">Sign in</v-btn>
         <v-btn color="primary" small :to="{ name: 'register' }" class="ml-2">Register</v-btn>
       </template>
     </v-container>

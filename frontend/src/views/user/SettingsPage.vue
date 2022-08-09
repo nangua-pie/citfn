@@ -109,10 +109,10 @@ onMounted(() => {
         <v-text-field v-model="form.nickname" label="Display name" maxlength="64" />
         <v-textarea v-model="form.bio" label="Bio" rows="3" maxlength="255" />
 
-        <v-alert v-if="profileError" type="error" variant="tonal" density="compact" class="mb-3">
+        <v-alert v-if="profileError" type="error" variant="outlined" density="compact" class="mb-3">
           {{ profileError }}
         </v-alert>
-        <v-alert v-if="profileMessage" type="success" variant="tonal" density="compact" class="mb-3">
+        <v-alert v-if="profileMessage" type="success" variant="outlined" density="compact" class="mb-3">
           {{ profileMessage }}
         </v-alert>
 
@@ -139,7 +139,7 @@ onMounted(() => {
           autocomplete="new-password"
         />
 
-        <v-alert v-if="passwordError" type="error" variant="tonal" density="compact" class="mb-3">
+        <v-alert v-if="passwordError" type="error" variant="outlined" density="compact" class="mb-3">
           {{ passwordError }}
         </v-alert>
 

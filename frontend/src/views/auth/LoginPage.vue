@@ -41,7 +41,7 @@ async function submit() {
           autocomplete="current-password"
           @click:append-inner="showPassword = !showPassword"
         />
-        <v-alert v-if="error" type="error" variant="tonal" density="compact" class="mb-4">{{ error }}</v-alert>
+        <v-alert v-if="error" type="error" variant="outlined" density="compact" class="mb-4">{{ error }}</v-alert>
         <v-btn type="submit" color="primary" block :loading="auth.loading">Sign in</v-btn>
       </v-form>
 
