@@ -6,6 +6,7 @@ import dayjs from 'dayjs'
 import { deletePost, getPost, toggleCollect, toggleLike } from '@/api/post'
 import { useAuthStore } from '@/stores/auth'
 import { renderMarkdown } from '@/utils/markdown'
+import { routeId } from '@/utils/snowflake'
 import CommentThread from '@/components/CommentThread.vue'
 import type { Post } from '@/types'
 
@@ -18,7 +19,9 @@ const loading = ref(true)
 const notFound = ref(false)
 const error = ref('')
 
-const postId = () => Number(route.params.id)
+// Kept as the raw route string: the value is a 64 bit snowflake and
+// `Number()` would round it, so the lookup would miss the row entirely.
+const postId = () => routeId(route.params.id)
 const isOwner = computed(() => post.value !== null && post.value.userId === auth.profile?.id)
 
 /**
@@ -28,10 +31,17 @@ const isOwner = computed(() => post.value !== null && post.value.userId === auth
 const renderedBody = computed(() => renderMarkdown(post.value?.contentMd))
 
 async function load() {
+  const id = postId()
+  if (!id) {
+    notFound.value = true
+    error.value = 'this post is unavailable'
+    loading.value = false
+    return
+  }
   loading.value = true
   notFound.value = false
   try {
-    post.value = await getPost(postId())
+    post.value = await getPost(id)
   } catch (err) {
     notFound.value = true
     error.value = err instanceof Error ? err.message : 'this post is unavailable'
@@ -70,7 +80,7 @@ watch(() => route.params.id, load)
       <v-progress-circular indeterminate size="22" />
     </div>
 
-    <v-alert v-else-if="notFound" type="warning" variant="tonal" class="mb-4">
+    <v-alert v-else-if="notFound" type="warning" variant="outlined" class="mb-4">
       {{ error }}
     </v-alert>
 

@@ -8,15 +8,15 @@ import type { Conversation, ImMessage } from '@/types'
 const props = defineProps<{
   conversation: Conversation | null
   messages: ImMessage[]
-  currentUserId: number | null
+  currentUserId: string | null
   loading: boolean
   hasMore: boolean
 }>()
 
 const emit = defineEmits<{
   (event: 'send', content: string): void
-  (event: 'recall', messageId: number): void
-  (event: 'read', messageId: number): void
+  (event: 'recall', messageId: string): void
+  (event: 'read', messageId: string): void
   (event: 'load-older'): void
 }>()
 
@@ -60,7 +60,7 @@ watch(
 
       <div ref="scroller" class="chat-body px-4 py-3">
         <div v-if="hasMore" class="d-flex justify-center mb-3">
-          <v-btn size="x-small" text :loading="loading" @click="emit('load-older')">Load earlier</v-btn>
+          <v-btn size="x-small" variant="text" :loading="loading" @click="emit('load-older')">Load earlier</v-btn>
         </div>
 
         <div v-if="!messages.length && !loading" class="empty text-center muted py-8">

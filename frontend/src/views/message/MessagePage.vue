@@ -17,7 +17,7 @@ function onSend(content: string) {
   void messages.send(conversation.targetUserId, content)
 }
 
-function onRemove(conversationId: number) {
+function onRemove(conversationId: string) {
   void messages.removeConversation(conversationId)
 }
 

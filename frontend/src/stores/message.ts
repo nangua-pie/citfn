@@ -12,21 +12,22 @@ import {
   unreadCount,
 } from '@/api/message'
 import { imSocket } from '@/utils/ws'
+import { sortById } from '@/utils/snowflake'
 import type { SendMessagePayload } from '@/api/message'
 import type { Conversation, ImEvent, ImMessage, MessageType } from '@/types'
 
 /** Sorted oldest first so a transcript reads top to bottom. */
-const sortByTime = (messages: ImMessage[]): ImMessage[] => [...messages].sort((a, b) => a.messageId - b.messageId)
+const sortByTime = (messages: ImMessage[]): ImMessage[] => sortById(messages, (m) => m.messageId)
 
 export const useMessageStore = defineStore('message', () => {
   const conversations = ref<Conversation[]>([])
   const messages = ref<ImMessage[]>([])
-  const activeConversationId = ref<number | null>(null)
+  const activeConversationId = ref<string | null>(null)
   const unread = ref(0)
   const connected = ref(false)
   const loading = ref(false)
   /** Smallest id currently loaded; the cursor for the next older page. */
-  const oldestLoadedId = ref<number | null>(null)
+  const oldestLoadedId = ref<string | null>(null)
   const hasMore = ref(true)
 
   const activeConversation = computed(() => conversations.value.find((c) => c.id === activeConversationId.value) ?? null)
@@ -52,7 +53,7 @@ export const useMessageStore = defineStore('message', () => {
         break
       }
       case 'MESSAGE_RECALLED': {
-        const payload = event.data as { messageId: number }
+        const payload = event.data as { messageId: string }
         const target = messages.value.find((m) => m.messageId === payload.messageId)
         if (target) {
           target.status = 'RECALLED'
@@ -61,7 +62,7 @@ export const useMessageStore = defineStore('message', () => {
         break
       }
       case 'MESSAGE_READ': {
-        const payload = event.data as { messageId: number }
+        const payload = event.data as { messageId: string }
         const target = messages.value.find((m) => m.messageId === payload.messageId)
         if (target) {
           target.status = 'READ'
@@ -73,7 +74,7 @@ export const useMessageStore = defineStore('message', () => {
         break
       case 'USER_ONLINE':
       case 'USER_OFFLINE': {
-        const payload = event.data as { userId: number; online: boolean }
+        const payload = event.data as { userId: string; online: boolean }
         const peer = conversations.value.find((c) => c.targetUserId === payload.userId)
         if (peer) {
           peer.targetOnline = payload.online
@@ -109,7 +110,7 @@ export const useMessageStore = defineStore('message', () => {
     }
   }
 
-  async function selectConversation(conversationId: number) {
+  async function selectConversation(conversationId: string) {
     activeConversationId.value = conversationId
     messages.value = []
     oldestLoadedId.value = null
@@ -149,7 +150,7 @@ export const useMessageStore = defineStore('message', () => {
     }
   }
 
-  async function openWith(targetUserId: number) {
+  async function openWith(targetUserId: string) {
     const conversation = await openConversationApi(targetUserId)
     const index = conversations.value.findIndex((c) => c.id === conversation.id)
     if (index >= 0) {
@@ -161,7 +162,7 @@ export const useMessageStore = defineStore('message', () => {
     return conversation
   }
 
-  async function send(receiverId: number, content: string, messageType: MessageType = 'TEXT', extra?: string) {
+  async function send(receiverId: string, content: string, messageType: MessageType = 'TEXT', extra?: string) {
     const payload: SendMessagePayload = { receiverId, messageType, content, extra }
     // Prefer the socket when connected; fall back to REST so a dropped
     // connection never blocks sending.
@@ -174,7 +175,7 @@ export const useMessageStore = defineStore('message', () => {
     void loadConversations()
   }
 
-  async function recall(messageId: number) {
+  async function recall(messageId: string) {
     await recallMessageApi(messageId)
     const target = messages.value.find((m) => m.messageId === messageId)
     if (target) {
@@ -183,7 +184,7 @@ export const useMessageStore = defineStore('message', () => {
     }
   }
 
-  async function markRead(messageId: number) {
+  async function markRead(messageId: string) {
     await markMessageReadApi(messageId)
     const target = messages.value.find((m) => m.messageId === messageId)
     if (target) {
@@ -191,7 +192,7 @@ export const useMessageStore = defineStore('message', () => {
     }
   }
 
-  async function removeConversation(conversationId: number) {
+  async function removeConversation(conversationId: string) {
     await deleteConversationApi(conversationId)
     conversations.value = conversations.value.filter((c) => c.id !== conversationId)
     if (activeConversationId.value === conversationId) {

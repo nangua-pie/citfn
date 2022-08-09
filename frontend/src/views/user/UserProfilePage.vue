@@ -6,6 +6,7 @@ import { listPosts } from '@/api/post'
 import { getProfile } from '@/api/user'
 import { useAuthStore } from '@/stores/auth'
 import { useMessageStore } from '@/stores/message'
+import { routeId } from '@/utils/snowflake'
 import PostList from '@/components/PostList.vue'
 import type { Post, UserProfile } from '@/types'
 
@@ -19,15 +20,25 @@ const posts = ref<Post[]>([])
 const loading = ref(true)
 const error = ref('')
 
-const userId = () => Number(route.params.id)
+// The raw route string: a user id is a 64 bit snowflake, and `Number()`
+// would round it and address the wrong account.
+const userId = () => routeId(route.params.id)
 const isSelf = () => profile.value?.id === auth.profile?.id
 
 async function load() {
   loading.value = true
   error.value = ''
+  const id = userId()
+  if (!id) {
+    profile.value = null
+    posts.value = []
+    error.value = 'this profile is unavailable'
+    loading.value = false
+    return
+  }
   try {
-    profile.value = await getProfile(userId())
-    const result = await listPosts({ userId: userId(), page: 1, size: 10 })
+    profile.value = await getProfile(id)
+    const result = await listPosts({ userId: id, page: 1, size: 10 })
     posts.value = result.records
   } catch (err) {
     profile.value = null
@@ -53,7 +64,7 @@ watch(() => route.params.id, load)
       <v-progress-circular indeterminate size="22" />
     </div>
 
-    <v-alert v-else-if="error" type="warning" variant="tonal">{{ error }}</v-alert>
+    <v-alert v-else-if="error" type="warning" variant="outlined">{{ error }}</v-alert>
 
     <template v-else-if="profile">
       <v-card class="profile-card pa-5 mb-4">

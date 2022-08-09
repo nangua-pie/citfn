@@ -7,8 +7,8 @@ import { useAuthStore } from '@/stores/auth'
 import type { Comment } from '@/types'
 
 const props = defineProps<{
-  postId: number
-  postAuthorId: number
+  postId: string
+  postAuthorId: string
 }>()
 
 const auth = useAuthStore()
@@ -150,7 +150,7 @@ onMounted(load)
           Comment
         </v-btn>
       </div>
-      <v-alert v-if="error" type="error" variant="tonal" density="compact" class="mt-2">{{ error }}</v-alert>
+      <v-alert v-if="error" type="error" variant="outlined" density="compact" class="mt-2">{{ error }}</v-alert>
     </template>
 
     <p v-else class="muted text-body-2 mb-0">

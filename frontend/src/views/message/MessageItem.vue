@@ -10,8 +10,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (event: 'recall', messageId: number): void
-  (event: 'read', messageId: number): void
+  (event: 'recall', messageId: string): void
+  (event: 'read', messageId: string): void
 }>()
 
 const menu = ref(false)
@@ -70,8 +70,14 @@ function onRecall() {
     </div>
 
     <v-menu v-if="canRecall" v-model="menu" location="top end">
-      <template #activator="{ on, attrs }">
-        <v-btn icon size="x-small" variant="text" class="ml-1" v-bind="attrs" v-on="on">
+      <!--
+        Vuetify 3.0.0-beta.0 hands the activator a single `props` object that
+        already carries the click, focus and hover handlers. The stable 3.x
+        `{ on, attrs }` pair does not exist here, and destructuring `on` would
+        leave the button with no click handler at all.
+      -->
+      <template #activator="{ props: activatorProps }">
+        <v-btn icon size="x-small" variant="text" class="ml-1" v-bind="activatorProps">
           <v-icon icon="mdi-dots-vertical" size="16" />
         </v-btn>
       </template>

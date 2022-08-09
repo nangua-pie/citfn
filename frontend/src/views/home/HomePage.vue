@@ -13,7 +13,7 @@ const loading = ref(false)
 const total = ref(0)
 const page = ref(1)
 const keyword = ref('')
-const activeCategoryId = ref<number | null>(null)
+const activeCategoryId = ref<string | null>(null)
 
 const PAGE_SIZE = 20
 
@@ -34,7 +34,7 @@ async function load() {
   }
 }
 
-function selectCategory(id: number | null) {
+function selectCategory(id: string | null) {
   activeCategoryId.value = activeCategoryId.value === id ? null : id
   page.value = 1
   void load()

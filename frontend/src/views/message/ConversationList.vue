@@ -5,12 +5,12 @@ import type { Conversation } from '@/types'
 
 defineProps<{
   conversations: Conversation[]
-  activeId: number | null
+  activeId: string | null
 }>()
 
 const emit = defineEmits<{
-  (event: 'select', conversationId: number): void
-  (event: 'remove', conversationId: number): void
+  (event: 'select', conversationId: string): void
+  (event: 'remove', conversationId: string): void
 }>()
 
 function preview(conversation: Conversation): string {
