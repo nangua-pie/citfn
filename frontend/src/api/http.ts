@@ -61,7 +61,9 @@ const instance: AxiosInstance = axios.create({
 instance.interceptors.request.use((config) => {
   const token = tokenStorage.accessToken()
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+    // Axios types `headers` as optional on an outgoing config, so the token is
+    // merged into a fresh object rather than assigned through it.
+    config.headers = { ...config.headers, Authorization: `Bearer ${token}` }
   }
   return config
 })

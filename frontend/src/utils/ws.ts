@@ -48,13 +48,18 @@ export class ImSocket {
       heartbeatOutgoing: 10000,
       onConnect: () => {
         this.reconnectAttempt = 0
-        this.subscription = this.client?.subscribe(IM_QUEUE, (frame: IMessage) => {
-          this.handleFrame(frame)
-        })
+        this.subscription =
+          this.client?.subscribe(IM_QUEUE, (frame: IMessage) => {
+            this.handleFrame(frame)
+          }) ?? null
         this.stateHandler?.(true)
       },
       onWebSocketClose: () => {
         this.subscription = null
+        // A deliberate sign out should not look like a flaky connection.
+        if (!this.manuallyClosed) {
+          this.reconnectAttempt += 1
+        }
         this.stateHandler?.(false)
       },
       onStompError: () => {

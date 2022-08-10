@@ -42,3 +42,43 @@ declare module 'sockjs-client/dist/sockjs' {
 
   export default SockJS
 }
+
+// marked 4.0.16 and dompurify 2.3.10 ship no type declarations of their own,
+// and the DefinitelyTyped packages for them postdate this project's dependency
+// cutoff. Only the surface utils/markdown.ts actually uses is declared here.
+declare module 'marked' {
+  export interface MarkedOptions {
+    gfm?: boolean
+    breaks?: boolean
+    headerIds?: boolean
+    mangle?: boolean
+    baseUrl?: string | null
+    renderer?: unknown
+  }
+
+  export const marked: {
+    setOptions(options: MarkedOptions): void
+    parse(src: string): string
+    parseInline(src: string): string
+  }
+}
+
+declare module 'dompurify' {
+  export interface DomPurifyConfig {
+    ALLOWED_TAGS?: string[]
+    ALLOWED_ATTR?: string[]
+    ALLOW_DATA_ATTR?: boolean
+    ALLOW_ARIA_ATTR?: boolean
+    KEEP_CONTENT?: boolean
+    RETURN_TRUSTED_TYPE?: boolean
+  }
+
+  const DOMPurify: {
+    sanitize(dirty: string, config?: DomPurifyConfig): string
+    addHook(...args: unknown[]): void
+    removeAllHooks(): void
+    isValidAttribute(tag: string, attribute: string, value: string): boolean
+  }
+
+  export default DOMPurify
+}
