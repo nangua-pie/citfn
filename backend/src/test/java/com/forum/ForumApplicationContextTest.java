@@ -5,7 +5,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.ApplicationContext;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 
 import javax.sql.DataSource;
@@ -36,6 +38,9 @@ class ForumApplicationContextTest {
 
     @Autowired
     private ApplicationContext applicationContext;
+
+    @Autowired
+    private TestRestTemplate restTemplate;
 
     @Test
     @DisplayName("the application context starts and every module bean is wired")
@@ -93,5 +98,19 @@ class ForumApplicationContextTest {
                 com.forum.common.config.SecurityConfig.class)).isNotNull();
         assertThat(applicationContext.getBean(
                 com.forum.message.websocket.ImPresenceService.class)).isNotNull();
+    }
+
+    @Test
+    @DisplayName("a profile is readable by anyone while the rest of the user API stays private")
+    void profileIsPublicButTheRestOfTheUserApiIsNot() {
+        // The datasource is mocked, so the profile request fails somewhere
+        // below the security layer. Reaching that point at all is the point:
+        // the filter chain let an anonymous caller through.
+        ResponseEntity<String> profile = restTemplate.getForEntity("/api/users/1/profile", String.class);
+        assertThat(profile.getBody()).doesNotContain("\"code\":40100");
+
+        // Everything else under /api/users still needs a session.
+        ResponseEntity<String> me = restTemplate.getForEntity("/api/users/me", String.class);
+        assertThat(me.getBody()).contains("\"code\":40100");
     }
 }

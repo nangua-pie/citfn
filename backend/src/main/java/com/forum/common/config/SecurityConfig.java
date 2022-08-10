@@ -63,6 +63,11 @@ public class SecurityConfig {
                                 "/api/posts/**",
                                 "/api/comments/**",
                                 "/api/tags/**",
+                                // UserController documents profiles as readable
+                                // by anyone, and UserProfileVO carries no email or
+                                // other private field. Without this rule the public
+                                // profile route answered 401 to signed out visitors.
+                                "/api/users/*/profile",
                                 "/files/**").permitAll()
                         // Authentication entry points.
                         .antMatchers(HttpMethod.POST,
