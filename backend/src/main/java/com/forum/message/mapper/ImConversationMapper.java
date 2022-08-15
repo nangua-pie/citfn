@@ -52,6 +52,21 @@ public interface ImConversationMapper extends BaseMapper<ImConversation> {
                          @Param("preview") String preview,
                          @Param("sendTime") LocalDateTime sendTime);
 
+    /**
+     * Replaces the preview when a recalled message is the newest in the thread.
+     *
+     * <p>Guarded by {@code last_message_id} so a recall only rewrites the
+     * preview it actually still describes: if a newer message arrived after
+     * the recalled one, that newer preview is left alone.
+     */
+    @Update("UPDATE im_conversation SET last_message_preview = #{preview} "
+            + "WHERE user_id = #{userId} AND target_user_id = #{targetUserId} "
+            + "AND last_message_id = #{messageId} AND is_deleted = 0")
+    int replaceLastMessagePreview(@Param("userId") Long userId,
+                                  @Param("targetUserId") Long targetUserId,
+                                  @Param("messageId") Long messageId,
+                                  @Param("preview") String preview);
+
     @Update("UPDATE im_conversation SET is_deleted = 1 WHERE id = #{conversationId} AND user_id = #{userId}")
     int softDeleteOwned(@Param("conversationId") Long conversationId, @Param("userId") Long userId);
 

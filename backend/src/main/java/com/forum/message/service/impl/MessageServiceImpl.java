@@ -58,6 +58,14 @@ public class MessageServiceImpl implements MessageService {
     /** Preview length stored on the conversation row. */
     private static final int PREVIEW_LENGTH = 60;
 
+    /**
+     * Preview shown once the newest message of a thread has been recalled.
+     *
+     * <p>Without this the conversation list keeps rendering the retracted
+     * text, so a recall would blank the transcript but not the preview.
+     */
+    private static final String RECALLED_PREVIEW = "[message recalled]";
+
     /** Conversation list cache lifetime; short, because presence changes often. */
     private static final Duration CONVERSATION_CACHE_TTL = Duration.ofSeconds(60);
 
@@ -370,6 +378,19 @@ public class MessageServiceImpl implements MessageService {
             throw BusinessException.conflict("the recall window has expired");
         }
         messageMapper.markRecalled(messageId, recallTime);
+        // The transcript body is blanked above; the conversation list preview
+        // is a separate copy of the same text and has to be retracted too.
+        // Each participant owns their own conversation row, so both are
+        // updated, and only when this message is still the newest one.
+        conversationMapper.replaceLastMessagePreview(
+                message.getSenderId(), message.getReceiverId(), messageId, RECALLED_PREVIEW);
+        conversationMapper.replaceLastMessagePreview(
+                message.getReceiverId(), message.getSenderId(), messageId, RECALLED_PREVIEW);
+        // The conversation list is cached for CONVERSATION_CACHE_TTL, so both
+        // participants' cached rows are dropped. Without this the retracted
+        // preview keeps being served from Redis after the recall succeeds.
+        invalidateConversations(message.getSenderId());
+        invalidateConversations(message.getReceiverId());
         pushService.pushMessageRecalled(message.getSenderId(), messageId, message.getConversationId());
         pushService.pushMessageRecalled(message.getReceiverId(), messageId, message.getConversationId());
         log.info("private message {} recalled by its sender", messageId);

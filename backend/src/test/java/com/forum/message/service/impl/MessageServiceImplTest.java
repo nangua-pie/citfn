@@ -1,6 +1,7 @@
 package com.forum.message.service.impl;
 
 import com.forum.common.exception.BusinessException;
+import com.forum.common.util.RedisKeys;
 import com.forum.message.dto.SendMessageRequest;
 import com.forum.message.entity.ImConversation;
 import com.forum.message.entity.ImMessage;
@@ -323,6 +324,43 @@ class MessageServiceImplTest {
                 .isEqualTo(40900);
 
         verify(messageMapper, never()).markRecalled(anyLong(), any());
+    }
+
+    @Test
+    @DisplayName("recall retracts the conversation preview on both sides")
+    void recallBlanksConversationPreviewForBothParticipants() {
+        ImMessage message = message(5L, "mine");
+        message.setSenderId(SENDER_ID);
+        message.setReceiverId(RECEIVER_ID);
+        message.setSendTime(LocalDateTime.now().minusSeconds(10));
+        when(messageMapper.selectById(5L)).thenReturn(message);
+
+        service.recallMessage(SENDER_ID, 5L);
+
+        // Each participant owns a conversation row, so the preview has to be
+        // rewritten in both orientations or one side keeps seeing the
+        // retracted text in the message list.
+        verify(conversationMapper).replaceLastMessagePreview(
+                SENDER_ID, RECEIVER_ID, 5L, "[message recalled]");
+        verify(conversationMapper).replaceLastMessagePreview(
+                RECEIVER_ID, SENDER_ID, 5L, "[message recalled]");
+    }
+
+    @Test
+    @DisplayName("recall drops the cached conversation lists so the preview cannot come back")
+    void recallInvalidatesCachedConversationLists() {
+        ImMessage message = message(5L, "mine");
+        message.setSenderId(SENDER_ID);
+        message.setReceiverId(RECEIVER_ID);
+        message.setSendTime(LocalDateTime.now().minusSeconds(10));
+        when(messageMapper.selectById(5L)).thenReturn(message);
+
+        service.recallMessage(SENDER_ID, 5L);
+
+        // The conversation list is cached, so without these deletes the
+        // retracted preview would still be served from Redis until the TTL.
+        verify(redisTemplate).delete(RedisKeys.imConversation(SENDER_ID));
+        verify(redisTemplate).delete(RedisKeys.imConversation(RECEIVER_ID));
     }
 
     @Test
