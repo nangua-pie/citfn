@@ -59,6 +59,11 @@ export const useMessageStore = defineStore('message', () => {
           target.status = 'RECALLED'
           target.content = ''
         }
+        // The conversation list keeps its own copy of the last message as a
+        // preview, so it is reloaded here too. Otherwise a recall arriving
+        // over the socket leaves the retracted text in the sidebar until the
+        // page happens to be reloaded.
+        void loadConversations()
         break
       }
       case 'MESSAGE_READ': {
