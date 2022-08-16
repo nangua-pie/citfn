@@ -66,7 +66,12 @@ onMounted(() => {
 <style scoped>
 .message-layout {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  /*
+   * minmax(0, 1fr) rather than a bare 1fr: the panel keeps its automatic
+   * minimum size otherwise, so a long nickname or an unbroken message would
+   * stretch the chat column past the viewport instead of wrapping.
+   */
+  grid-template-columns: 300px minmax(0, 1fr);
   height: calc(100vh - 56px - 48px);
   border: 1px solid $border;
   border-radius: $radius-md;
@@ -77,6 +82,7 @@ onMounted(() => {
 .sidebar {
   border-right: 1px solid $border;
   min-height: 0;
+  min-width: 0;
 }
 
 .sidebar-header {
@@ -89,7 +95,7 @@ onMounted(() => {
 
 @media (max-width: 840px) {
   .message-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .sidebar {

@@ -71,26 +71,33 @@ onMounted(load)
 
       <v-list v-else lines="three">
         <v-list-item v-for="report in reports" :key="report.id" class="report-row">
-          <v-list-item-title class="d-flex align-center">
-            <span class="chip mr-2">{{ report.targetType }}</span>
-            <span class="text-truncate">#{{ report.targetId }}</span>
-            <v-spacer />
-            <v-chip size="small" :color="report.status === 0 ? 'warning' : report.status === 1 ? 'error' : 'success'">
-              {{ statusLabels[report.status] ?? report.status }}
-            </v-chip>
-          </v-list-item-title>
-          <v-list-item-subtitle>
-            {{ report.reasonCode }}
-            <span v-if="report.reporterNickname"> · by {{ report.reporterNickname }}</span>
-            · {{ dayjs(report.createTime).format('MMM D, HH:mm') }}
-          </v-list-item-subtitle>
-          <v-list-item-subtitle v-if="report.reasonDetail" class="detail">
-            {{ report.reasonDetail }}
-          </v-list-item-subtitle>
-          <v-list-item-action v-if="report.status === 0" class="actions">
+          <!--
+            beta.0 does not stack bare title and subtitle children of a list
+            item, and it has no v-list-item-action component at all, so this
+            row used to render as one wide horizontal band.
+          -->
+          <v-list-item-header>
+            <v-list-item-title class="d-flex align-center">
+              <span class="chip mr-2">{{ report.targetType }}</span>
+              <span class="text-truncate target">#{{ report.targetId }}</span>
+              <v-spacer />
+              <v-chip size="small" :color="report.status === 0 ? 'warning' : report.status === 1 ? 'error' : 'success'">
+                {{ statusLabels[report.status] ?? report.status }}
+              </v-chip>
+            </v-list-item-title>
+            <v-list-item-subtitle>
+              {{ report.reasonCode }}
+              <span v-if="report.reporterNickname"> · by {{ report.reporterNickname }}</span>
+              · {{ dayjs(report.createTime).format('MMM D, HH:mm') }}
+            </v-list-item-subtitle>
+            <v-list-item-subtitle v-if="report.reasonDetail" class="detail">
+              {{ report.reasonDetail }}
+            </v-list-item-subtitle>
+          </v-list-item-header>
+          <div v-if="report.status === 0" class="actions">
             <v-btn size="small" variant="text" @click="decide(report, false)">Dismiss</v-btn>
             <v-btn size="small" color="error" variant="text" @click="decide(report, true)">Remove</v-btn>
-          </v-list-item-action>
+          </div>
         </v-list-item>
       </v-list>
     </v-card>
@@ -104,11 +111,22 @@ onMounted(load)
 
 .report-row {
   border-bottom: 1px solid $border;
+  min-width: 0;
+}
+
+.actions {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .chip {
   font-size: 11px;
   height: 18px;
+}
+
+/* Target ids are 19 digit snowflakes and must not widen the row. */
+.target {
+  min-width: 0;
 }
 
 .detail {

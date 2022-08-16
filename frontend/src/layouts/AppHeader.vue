@@ -78,8 +78,11 @@ onMounted(loadCategories)
             :key="category.id"
             :to="{ name: 'category', params: { id: category.id } }"
           >
-            <v-list-item-title>{{ category.name }}</v-list-item-title>
-            <v-list-item-subtitle>{{ category.postCount }} posts</v-list-item-subtitle>
+            <!-- beta.0 needs the header to stack the name above the count. -->
+            <v-list-item-header>
+              <v-list-item-title>{{ category.name }}</v-list-item-title>
+              <v-list-item-subtitle>{{ category.postCount }} posts</v-list-item-subtitle>
+            </v-list-item-header>
           </v-list-item>
         </v-list>
       </v-menu>

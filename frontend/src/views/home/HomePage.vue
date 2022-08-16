@@ -73,8 +73,15 @@ watch(page, () => void load())
             :key="category.id"
             @click="selectCategory(category.id)"
           >
-            <v-list-item-title class="text-body-2">{{ category.name }}</v-list-item-title>
-            <v-list-item-subtitle class="text-caption">{{ category.postCount }}</v-list-item-subtitle>
+            <!--
+              beta.0 lays bare title and subtitle children of a list item out
+              side by side, which ran the post count into the board name. The
+              header is what stacks them.
+            -->
+            <v-list-item-header>
+              <v-list-item-title class="text-body-2">{{ category.name }}</v-list-item-title>
+              <v-list-item-subtitle class="text-caption">{{ category.postCount }}</v-list-item-subtitle>
+            </v-list-item-header>
           </v-list-item>
         </v-list>
       </aside>
@@ -109,9 +116,19 @@ watch(page, () => void load())
 <style scoped>
 .home-layout {
   display: grid;
-  grid-template-columns: 220px 1fr;
+  /*
+   * minmax(0, 1fr) rather than a bare 1fr: a 1fr track keeps its automatic
+   * minimum size, so one long unbreakable title could stretch the feed column
+   * past the viewport and the page would clip instead of truncating.
+   */
+  grid-template-columns: 220px minmax(0, 1fr);
   gap: 24px;
   align-items: start;
+}
+
+.boards,
+.feed {
+  min-width: 0;
 }
 
 .section-title {
@@ -136,7 +153,7 @@ watch(page, () => void load())
 
 @media (max-width: 840px) {
   .home-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>
