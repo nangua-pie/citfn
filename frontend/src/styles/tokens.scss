@@ -1,0 +1,161 @@
+// Material Design 3 design tokens.
+//
+// This is the single place a raw colour, radius, shadow or spacing step is
+// written down. Components never name a colour directly: they use the
+// `$`-prefixed semantic aliases in variables.scss, which resolve to the
+// custom properties defined here. That indirection is what lets a single
+// `.v-theme--dark` block re-skin the whole app.
+//
+// Roles follow the MD3 naming in MDesign.md section 3. The brand stays the
+// forum's existing green; only the structure around it is systematised.
+
+:root {
+  color-scheme: light;
+
+  // -- Brand ---------------------------------------------------------------
+  --md-sys-color-primary: #2f6f4f;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-primary-container: #b3f1c3;
+  --md-sys-color-on-primary-container: #00210c;
+  --md-sys-color-secondary: #4e6354;
+  --md-sys-color-on-secondary: #ffffff;
+  --md-sys-color-secondary-container: #d0e8d4;
+  --md-sys-color-on-secondary-container: #0b1f10;
+  --md-sys-color-tertiary: #3b6373;
+  --md-sys-color-on-tertiary: #ffffff;
+  --md-sys-color-tertiary-container: #bfe8f9;
+  --md-sys-color-on-tertiary-container: #001f29;
+
+  // -- Neutrals ------------------------------------------------------------
+  --md-sys-color-background: #f6f8f6;
+  --md-sys-color-on-background: #191c19;
+  --md-sys-color-surface: #ffffff;
+  --md-sys-color-on-surface: #191c19;
+  --md-sys-color-surface-variant: #eef1ee;
+  --md-sys-color-on-surface-variant: #414942;
+  // Recessed fills: board rails, code blocks, the chat transcript.
+  --md-sys-color-surface-container-low: #f1f4f1;
+  --md-sys-color-surface-container: #e9ede9;
+  --md-sys-color-outline: #717972;
+  --md-sys-color-outline-variant: #c7cfc8;
+
+  // -- State ---------------------------------------------------------------
+  --md-sys-color-error: #b3261e;
+  --md-sys-color-on-error: #ffffff;
+  --md-sys-color-error-container: #f9dedc;
+  --md-sys-color-on-error-container: #410e0b;
+  --md-sys-color-success: #2f6f4f;
+  --md-sys-color-success-container: #b3f1c3;
+  --md-sys-color-on-success-container: #00210c;
+  --md-sys-color-warning: #8a5000;
+  --md-sys-color-warning-container: #ffddb6;
+  --md-sys-color-on-warning-container: #2c1600;
+
+  // -- State overlays (MD3 "state layers") --------------------------------
+  // Per-state tints applied on top of a surface for hover, focus and press.
+  --md-sys-state-hover: 0.04;
+  --md-sys-state-focus: 0.10;
+  --md-sys-state-pressed: 0.12;
+  --md-sys-state-selected: 0.10;
+
+  // -- Shape ---------------------------------------------------------------
+  // MDesign.md section 9: 8px controls, 12px containers, 16px dialogs.
+  --md-sys-shape-corner-sm: 8px;
+  --md-sys-shape-corner-md: 12px;
+  --md-sys-shape-corner-lg: 16px;
+  --md-sys-shape-corner-full: 999px;
+
+  // -- Spacing (section 10) ------------------------------------------------
+  --md-sys-space-1: 4px;
+  --md-sys-space-2: 8px;
+  --md-sys-space-3: 12px;
+  --md-sys-space-4: 16px;
+  --md-sys-space-5: 20px;
+  --md-sys-space-6: 24px;
+  --md-sys-space-8: 32px;
+  --md-sys-space-10: 40px;
+  --md-sys-space-12: 48px;
+  --md-sys-space-16: 64px;
+
+  // -- Type scale (section 4) ---------------------------------------------
+  --md-sys-typescale-title-lg: 1.375rem;
+  --md-sys-typescale-title-md: 1.125rem;
+  --md-sys-typescale-title-sm: 1rem;
+  --md-sys-typescale-body-lg: 1rem;
+  --md-sys-typescale-body-md: 0.875rem;
+  --md-sys-typescale-body-sm: 0.8125rem;
+  --md-sys-typescale-label-sm: 0.75rem;
+  --md-sys-typescale-label-xs: 0.6875rem;
+  // Reading measure, kept in a token so prose and the shell can agree.
+  --md-sys-typescale-body-line: 1.65;
+
+  // -- Layout --------------------------------------------------------------
+  --md-sys-layout-max: 1280px;
+  --md-sys-layout-reading: 780px;
+  --md-sys-layout-header-height: 56px;
+  --md-sys-layout-gutter: 16px;
+
+  // -- Elevation -----------------------------------------------------------
+  // Reserved for overlays (menus, dialogs, the app bar). Plain content uses
+  // borders and surface steps instead of shadows.
+  --md-sys-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.06);
+  --md-sys-elevation-2: 0 1px 3px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.08);
+  --md-sys-elevation-3: 0 4px 8px rgba(0, 0, 0, 0.12), 0 12px 24px rgba(0, 0, 0, 0.1);
+
+  // -- Motion (section 13) -------------------------------------------------
+  --md-sys-motion-short: 120ms;
+  --md-sys-motion-medium: 200ms;
+  --md-sys-motion-easing: cubic-bezier(0.2, 0, 0, 1);
+}
+
+// Vuetify stamps `v-theme--light` / `v-theme--dark` onto the `.v-application`
+// element, so every token above can be re-declared here and still cascade to
+// all of the app's own markup.
+.v-theme--dark {
+  color-scheme: dark;
+
+  --md-sys-color-primary: #8ed6a8;
+  --md-sys-color-on-primary: #00391c;
+  --md-sys-color-primary-container: #1a5230;
+  --md-sys-color-on-primary-container: #a9f2c0;
+  --md-sys-color-secondary: #b4ccbb;
+  --md-sys-color-on-secondary: #203526;
+  --md-sys-color-secondary-container: #364b3e;
+  --md-sys-color-on-secondary-container: #d0e8d4;
+  --md-sys-color-tertiary: #a3ccdf;
+  --md-sys-color-on-tertiary: #033544;
+  --md-sys-color-tertiary-container: #204c5c;
+  --md-sys-color-on-tertiary-container: #bfe8f9;
+
+  --md-sys-color-background: #0f1310;
+  --md-sys-color-on-background: #dfe4de;
+  --md-sys-color-surface: #171b18;
+  --md-sys-color-on-surface: #dfe4de;
+  --md-sys-color-surface-variant: #1f2420;
+  --md-sys-color-on-surface-variant: #bfc9c1;
+  --md-sys-color-surface-container-low: #141815;
+  --md-sys-color-surface-container: #232925;
+  --md-sys-color-outline: #8b958d;
+  --md-sys-color-outline-variant: #3c453f;
+
+  --md-sys-color-error: #ffb4ab;
+  --md-sys-color-on-error: #690005;
+  --md-sys-color-error-container: #93000a;
+  --md-sys-color-on-error-container: #ffdad6;
+  --md-sys-color-success: #8ed6a8;
+  --md-sys-color-success-container: #1a5230;
+  --md-sys-color-on-success-container: #a9f2c0;
+  --md-sys-color-warning: #ffb868;
+  --md-sys-color-warning-container: #6a3c00;
+  --md-sys-color-on-warning-container: #ffddb6;
+
+  // Overlays need more separation from the page on a dark surface.
+  --md-sys-state-hover: 0.08;
+  --md-sys-state-focus: 0.14;
+  --md-sys-state-pressed: 0.16;
+  --md-sys-state-selected: 0.14;
+
+  --md-sys-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
+  --md-sys-elevation-2: 0 1px 3px rgba(0, 0, 0, 0.55), 0 4px 8px rgba(0, 0, 0, 0.45);
+  --md-sys-elevation-3: 0 4px 8px rgba(0, 0, 0, 0.6), 0 12px 24px rgba(0, 0, 0, 0.5);
+}

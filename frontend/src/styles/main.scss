@@ -1,32 +1,87 @@
 @use './variables.scss' as *;
+@use './tokens.scss';
+
+// Global element styles, the shared page frame and the few utility classes
+// used across views. Component-specific rules stay in their own components.
 
 html {
   overflow-y: auto;
+  // Nothing may scroll the document sideways: MDesign.md section 11 requires
+  // 320px to work, and a single wide child would otherwise add a scrollbar.
+  overflow-x: hidden;
 }
 
 body {
   margin: 0;
-  background-color: $surface-muted;
   color: $text-primary;
   // The reading surfaces are dense and utilitarian, so typography leads.
   font-family: 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: var(--md-sys-typescale-body-lg);
+  line-height: var(--md-sys-typescale-body-line);
   -webkit-font-smoothing: antialiased;
 }
 
+// The app shell owns the page background so the dark theme, which Vuetify
+// scopes to `.v-theme--dark` on this element, can repaint it.
+.v-application {
+  background-color: var(--md-sys-color-background) !important;
+  color: var(--md-sys-color-on-surface) !important;
+}
+
 // Long identifiers and URLs must wrap rather than widen the layout.
-code, pre {
+code,
+pre {
   word-break: break-word;
 }
 
+// -- Focus and motion ------------------------------------------------------
+//
+// A single visible ring for anything keyboard-reachable that Vuetify does not
+// already outline itself.
+:focus-visible {
+  outline: 2px solid $accent;
+  outline-offset: 2px;
+  border-radius: $radius-sm;
+}
+
+// MDesign.md section 13: transitions are feedback, not decoration, and a user
+// who asked for less motion should get none of it.
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+// -- Page frame ------------------------------------------------------------
 .page-container {
-  max-width: 1200px;
+  max-width: var(--md-sys-layout-max);
   margin: 0 auto;
-  padding: 24px 16px;
+  padding: var(--md-sys-space-6) var(--md-sys-layout-gutter);
+
+  // MDesign.md section 5 asks for 16px gutters, tightened to 12px only on the
+  // narrowest phones.
+  @include below($bp-xs) {
+    padding: var(--md-sys-space-4) 12px;
+  }
 }
 
 .page-title {
-  font-size: 20px;
+  font-size: var(--md-sys-typescale-title-lg);
   font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0;
+}
+
+// Level 2 section heading inside a page.
+.section-title {
+  font-size: var(--md-sys-typescale-title-sm);
+  font-weight: 600;
+  line-height: 1.4;
   letter-spacing: 0;
 }
 
@@ -38,30 +93,108 @@ code, pre {
   @include ellipsis;
 }
 
-// Rendered markdown. Every value reaching v-html has already been through
-// DOMPurify in utils/markdown.ts.
-.markdown-body {
-  line-height: 1.7;
-  word-wrap: break-word;
+// -- Surfaces --------------------------------------------------------------
+// A bordered panel, the app's default grouping. MD3 reserves real elevation
+// for overlays, so this is border + surface colour only.
+.panel {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: $radius-md;
+}
 
-  h1, h2, h3, h4 {
-    margin: 24px 0 12px;
+// Recessed fill for wells: code blocks, the chat transcript, board rails.
+.panel-sunken {
+  background: $surface-muted;
+  border: 1px solid $border;
+  border-radius: $radius-md;
+}
+
+// -- States ----------------------------------------------------------------
+// Shared empty / error treatment so every list in the app fails the same way.
+.state-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--md-sys-space-2);
+  padding: var(--md-sys-space-10) var(--md-sys-space-4);
+  text-align: center;
+  color: $text-muted;
+  font-size: var(--md-sys-typescale-body-md);
+}
+
+.state-message__title {
+  color: $text-primary;
+  font-weight: 500;
+}
+
+// Skeleton placeholder. Painted with a surface step rather than a spinner so
+// the list does not jump when content arrives.
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--md-sys-color-surface-container) 25%,
+    var(--md-sys-color-surface-variant) 37%,
+    var(--md-sys-color-surface-container) 63%
+  );
+  background-size: 400% 100%;
+  animation: skeleton-sheen 1.4s ease infinite;
+  border-radius: $radius-sm;
+}
+
+@keyframes skeleton-sheen {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+// -- Rendered markdown -----------------------------------------------------
+// Every value reaching v-html has already been through DOMPurify in
+// utils/markdown.ts.
+.markdown-body {
+  line-height: var(--md-sys-typescale-body-line);
+  // MDesign.md section 4 caps the reading measure; unbounded line length is
+  // the main cause of unreadable prose on a wide monitor.
+  max-width: var(--md-sys-layout-reading);
+  @include overflow-wrap-anywhere;
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    margin: var(--md-sys-space-6) 0 var(--md-sys-space-3);
     line-height: 1.3;
+    letter-spacing: 0;
   }
 
-  h1 { font-size: 24px; }
-  h2 { font-size: 20px; }
-  h3 { font-size: 17px; }
+  h1 {
+    font-size: var(--md-sys-typescale-title-lg);
+  }
 
-  p { margin: 12px 0; }
+  h2 {
+    font-size: var(--md-sys-typescale-title-md);
+  }
+
+  h3 {
+    font-size: var(--md-sys-typescale-title-sm);
+  }
+
+  p {
+    margin: var(--md-sys-space-3) 0;
+  }
 
   img {
     max-width: 100%;
+    height: auto;
     border-radius: $radius-md;
   }
 
   pre {
-    padding: 12px;
+    padding: var(--md-sys-space-3);
+    // A wide block scrolls inside its own box rather than stretching the page.
     overflow-x: auto;
     background: $surface-muted;
     border: 1px solid $border;
@@ -69,27 +202,49 @@ code, pre {
   }
 
   code {
-    padding: 2px 4px;
+    padding: 2px var(--md-sys-space-1);
     background: $surface-muted;
     border-radius: $radius-sm;
-    font-size: 13px;
+    font-size: 0.8125em;
+  }
+
+  // Inline code only: a block's own padding is on the <pre>.
+  pre code {
+    padding: 0;
+    background: none;
   }
 
   blockquote {
-    margin: 12px 0;
-    padding-left: 12px;
-    border-left: 3px solid $border;
+    margin: var(--md-sys-space-3) 0;
+    padding-left: var(--md-sys-space-3);
+    border-left: 3px solid $border-strong;
     color: $text-muted;
   }
 
+  ul,
+  ol {
+    padding-left: var(--md-sys-space-6);
+  }
+
+  // A wide table scrolls inside its own box instead of pushing the article
+  // off screen (MDesign.md section 11).
   table {
-    width: 100%;
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
     border-collapse: collapse;
   }
 
-  th, td {
-    padding: 8px;
+  th,
+  td {
+    padding: var(--md-sys-space-2);
     border: 1px solid $border;
+    text-align: left;
+  }
+
+  th {
+    background: $surface-muted;
+    font-weight: 600;
   }
 
   a {
