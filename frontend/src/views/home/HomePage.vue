@@ -4,12 +4,16 @@ import { onMounted, ref, watch } from 'vue'
 import { listCategories } from '@/api/category'
 import { listPosts } from '@/api/post'
 import type { PostQuery } from '@/api/post'
+import { useAuthStore } from '@/stores/auth'
 import PostList from '@/components/PostList.vue'
 import type { Category, Post } from '@/types'
+
+const auth = useAuthStore()
 
 const posts = ref<Post[]>([])
 const categories = ref<Category[]>([])
 const loading = ref(false)
+const error = ref('')
 const total = ref(0)
 const page = ref(1)
 const keyword = ref('')
@@ -19,6 +23,7 @@ const PAGE_SIZE = 20
 
 async function load() {
   loading.value = true
+  error.value = ''
   try {
     const query: PostQuery = {
       page: page.value,
@@ -29,6 +34,12 @@ async function load() {
     const result = await listPosts(query)
     posts.value = result.records
     total.value = result.total
+  } catch (err) {
+    // Kept on screen rather than swallowed: the retry affordance in PostList
+    // needs something to explain.
+    error.value = err instanceof Error ? err.message : 'the posts could not be loaded'
+    posts.value = []
+    total.value = 0
   } finally {
     loading.value = false
   }
@@ -62,15 +73,68 @@ watch(page, () => void load())
 <template>
   <v-container class="page-container">
     <div class="home-layout">
-      <aside class="boards">
-        <h2 class="section-title">Boards</h2>
+      <!--
+        The feed leads the source order so the h1 precedes the board rail's
+        h2; the rail is placed into the left column with grid instead, and
+        drops below the feed on a narrow screen.
+      -->
+      <main class="feed">
+        <div class="feed-toolbar">
+          <h1 class="page-title">Posts</h1>
+          <v-text-field
+            v-model="keyword"
+            density="compact"
+            hide-details
+            aria-label="Search post titles and summaries"
+            placeholder="Search titles and summaries"
+            class="search"
+            @keyup.enter="submitSearch"
+          />
+          <v-btn size="small" @click="submitSearch">Search</v-btn>
+        </div>
+
+        <div class="feed-card panel">
+          <PostList
+            :posts="posts"
+            :loading="loading"
+            :error="error"
+            empty-text="No posts match this filter."
+            @retry="load"
+          >
+            <template #empty-action>
+              <v-btn
+                v-if="auth.isAuthenticated"
+                color="primary"
+                size="small"
+                class="mt-2"
+                :to="{ name: 'post-create' }"
+              >
+                Write the first post
+              </v-btn>
+            </template>
+          </PostList>
+        </div>
+
+        <div v-if="total > PAGE_SIZE" class="d-flex justify-center mt-4">
+          <v-pagination v-model="page" :length="pageCount()" total-visible="7" />
+        </div>
+      </main>
+
+      <aside class="boards" aria-label="Boards">
+        <h2 class="section-title boards__title">Boards</h2>
         <v-list density="compact" nav>
-          <v-list-item active-class="board--active" @click="selectCategory(null)">
+          <v-list-item
+            active-class="board--active"
+            :active="activeCategoryId === null"
+            @click="selectCategory(null)"
+          >
             <v-list-item-title class="text-body-2">All posts</v-list-item-title>
           </v-list-item>
           <v-list-item
             v-for="category in categories"
             :key="category.id"
+            active-class="board--active"
+            :active="activeCategoryId === category.id"
             @click="selectCategory(category.id)"
           >
             <!--
@@ -85,30 +149,6 @@ watch(page, () => void load())
           </v-list-item>
         </v-list>
       </aside>
-
-      <main class="feed">
-        <div class="d-flex align-center mb-3">
-          <h1 class="page-title">Posts</h1>
-          <v-spacer />
-          <v-text-field
-            v-model="keyword"
-            density="compact"
-            hide-details
-            placeholder="Search titles and summaries"
-            style="max-width: 280px"
-            @keyup.enter="submitSearch"
-          />
-          <v-btn class="ml-2" size="small" @click="submitSearch">Search</v-btn>
-        </div>
-
-        <v-card class="feed-card">
-          <PostList :posts="posts" :loading="loading" empty-text="No posts match this filter." />
-        </v-card>
-
-        <div v-if="total > PAGE_SIZE" class="d-flex justify-center mt-4">
-          <v-pagination v-model="page" :length="pageCount()" total-visible="7" />
-        </div>
-      </main>
     </div>
   </v-container>
 </template>
@@ -122,7 +162,8 @@ watch(page, () => void load())
    * past the viewport and the page would clip instead of truncating.
    */
   grid-template-columns: 220px minmax(0, 1fr);
-  gap: 24px;
+  grid-template-areas: 'boards feed';
+  gap: var(--md-sys-space-6);
   align-items: start;
 }
 
@@ -131,29 +172,83 @@ watch(page, () => void load())
   min-width: 0;
 }
 
-.section-title {
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: $text-muted;
-  margin-bottom: 8px;
+.feed {
+  grid-area: feed;
 }
 
 .boards {
+  grid-area: boards;
+  position: sticky;
+  top: calc(#{$header-height} + var(--md-sys-space-4));
   background: $surface;
   border: 1px solid $border;
   border-radius: $radius-md;
-  padding: 12px;
+  padding: var(--md-sys-space-3);
+}
+
+.boards__title {
+  margin-bottom: var(--md-sys-space-2);
+  padding: 0 var(--md-sys-space-3);
+  font-size: var(--md-sys-typescale-label-sm);
+  color: $text-muted;
 }
 
 .feed-card {
-  border: 1px solid $border;
   overflow: hidden;
 }
 
-@media (max-width: 840px) {
+/* A fixed max-width keeps the search box from stretching with the feed. */
+.feed-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--md-sys-space-2);
+  margin-bottom: var(--md-sys-space-3);
+}
+
+/* The title absorbs the free space, pushing search to the trailing edge. */
+.feed-toolbar > .page-title {
+  flex: 1 1 auto;
+}
+
+.search {
+  max-width: 280px;
+}
+
+:deep(.board--active) {
+  background: $accent-soft;
+  color: $text-primary;
+  font-weight: 600;
+}
+
+/* Below the tablet range the rail is no longer worth its own column: it moves
+   under the feed and stops being sticky. */
+@include below($bp-md) {
   .home-layout {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'feed'
+      'boards';
+  }
+
+  .boards {
+    position: static;
+  }
+}
+
+/* On a phone the search takes the full width and drops below the title. */
+@include below($bp-sm) {
+  .feed-toolbar {
+    flex-wrap: wrap;
+  }
+
+  /* The title keeps its own line; the field and button share the next one. */
+  .feed-toolbar > .page-title {
+    flex: 1 0 100%;
+  }
+
+  .search {
+    flex: 1 1 auto;
+    max-width: none;
   }
 }
 </style>

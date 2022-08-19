@@ -93,6 +93,20 @@ pre {
   @include ellipsis;
 }
 
+// Visually hidden but still announced. Used to give an icon or a bare number
+// a word of context without adding visible clutter to a dense row.
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 // -- Surfaces --------------------------------------------------------------
 // A bordered panel, the app's default grouping. MD3 reserves real elevation
 // for overlays, so this is border + surface colour only.
