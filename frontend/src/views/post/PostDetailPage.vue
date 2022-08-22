@@ -6,6 +6,7 @@ import dayjs from 'dayjs'
 import { deletePost, getPost, toggleCollect, toggleLike } from '@/api/post'
 import { useAuthStore } from '@/stores/auth'
 import { renderMarkdown } from '@/utils/markdown'
+import { postStatusLabel, postStatusTone } from '@/utils/post'
 import { routeId } from '@/utils/snowflake'
 import CommentThread from '@/components/CommentThread.vue'
 import type { Post } from '@/types'
@@ -29,6 +30,8 @@ const isOwner = computed(() => post.value !== null && post.value.userId === auth
  * value reaches v-html.
  */
 const renderedBody = computed(() => renderMarkdown(post.value?.contentMd))
+const statusLabel = computed(() => postStatusLabel(post.value?.status))
+const statusTone = computed(() => postStatusTone(post.value?.status))
 
 async function load() {
   const id = postId()
@@ -76,87 +79,220 @@ watch(() => route.params.id, load)
 
 <template>
   <v-container class="page-container">
+    <div class="article">
     <div v-if="loading" class="pa-6 text-center">
       <v-progress-circular indeterminate size="22" />
     </div>
 
-    <v-alert v-else-if="notFound" type="warning" variant="outlined" class="mb-4">
-      {{ error }}
-    </v-alert>
+    <div v-else-if="notFound" class="state-message">
+      <v-icon icon="mdi-file-question-outline" size="28" />
+      <span class="state-message__title">This post is unavailable</span>
+      <span>{{ error }}</span>
+      <v-btn variant="outlined" size="small" class="mt-2" :to="{ name: 'home' }">
+        Back to the forum
+      </v-btn>
+    </div>
 
     <template v-else-if="post">
-      <v-card class="post-card pa-5">
+      <article class="post-card panel">
         <h1 class="post-title">{{ post.title }}</h1>
-        <div class="d-flex align-center flex-wrap meta mt-2 mb-4">
-          <v-avatar size="28" class="mr-2">
-            <v-img v-if="post.authorAvatarUrl" :src="post.authorAvatarUrl" />
+
+        <div class="post-flags">
+          <span v-if="post.isTop" class="flag flag--pinned">
+            <v-icon icon="mdi-pin" size="12" class="flag__icon" />
+            Pinned
+          </span>
+          <span v-if="post.isEssential" class="flag flag--essential">
+            <v-icon icon="mdi-star" size="12" class="flag__icon" />
+            Essential
+          </span>
+          <span v-if="statusLabel" class="flag" :class="`flag--${statusTone}`">
+            {{ statusLabel }}
+          </span>
+        </div>
+
+        <div class="post-meta">
+          <v-avatar size="32" class="post-meta__avatar">
+            <v-img v-if="post.authorAvatarUrl" :src="post.authorAvatarUrl" alt="" />
+            <span v-else>{{ post.authorNickname?.charAt(0) }}</span>
           </v-avatar>
-          <router-link :to="{ name: 'user-profile', params: { id: post.userId } }" class="author mr-3">
+          <router-link :to="{ name: 'user-profile', params: { id: post.userId } }" class="author">
             {{ post.authorNickname ?? 'Unknown' }}
           </router-link>
-          <span class="muted">{{ dayjs(post.createTime).format('MMM D, YYYY HH:mm') }}</span>
-          <v-spacer />
-          <span class="muted mr-3">{{ post.viewCount }} views</span>
+          <time :datetime="post.createTime" class="muted">
+            {{ dayjs(post.createTime).format('MMM D, YYYY HH:mm') }}
+          </time>
+          <span class="muted">·</span>
+          <span class="muted">{{ post.viewCount }} views</span>
         </div>
 
         <!-- Rendered markdown, sanitised by DOMPurify in utils/markdown.ts. -->
         <div class="markdown-body" v-html="renderedBody" />
 
-        <div v-if="post.tags?.length" class="d-flex flex-wrap mt-4">
-          <v-chip v-for="tagName in post.tags" :key="tagName" size="small" class="mr-1 mb-1">
+        <div v-if="post.tags?.length" class="post-tags">
+          <v-chip v-for="tagName in post.tags" :key="tagName" size="small" class="post-tag">
             {{ tagName }}
           </v-chip>
         </div>
 
-        <v-divider class="my-4" />
+        <v-divider class="post-divider" />
 
-        <div class="d-flex align-center flex-wrap">
+        <!--
+          Like and collect are tonal, because they are stateful but reversible.
+          Edit is a text action; delete is the only destructive one and is kept
+          on the trailing edge.
+        -->
+        <div class="post-actions">
           <v-btn
-            size="small"
-            variant="text"
+            :variant="post.liked ? 'contained' : 'outlined'"
             :color="post.liked ? 'primary' : undefined"
-            class="mr-2"
+            size="small"
+            class="post-action"
+            :aria-pressed="post.liked"
             @click="onLike"
           >
-            <v-icon icon="mdi-heart-outline" size="16" class="mr-1" />
-            {{ post.likeCount }}
+            <v-icon :icon="post.liked ? 'mdi-heart' : 'mdi-heart-outline'" size="16" class="mr-1" />
+            {{ post.liked ? 'Liked' : 'Like' }}
+            <span class="post-action__count">{{ post.likeCount }}</span>
           </v-btn>
-          <v-btn size="small" variant="text" :color="post.collected ? 'primary' : undefined" class="mr-2" @click="onCollect">
-            <v-icon icon="mdi-bookmark-outline" size="16" class="mr-1" />
-            {{ post.collectCount }}
+          <v-btn
+            :variant="post.collected ? 'contained' : 'outlined'"
+            :color="post.collected ? 'primary' : undefined"
+            size="small"
+            class="post-action"
+            :aria-pressed="post.collected"
+            @click="onCollect"
+          >
+            <v-icon :icon="post.collected ? 'mdi-bookmark' : 'mdi-bookmark-outline'" size="16" class="mr-1" />
+            {{ post.collected ? 'Saved' : 'Save' }}
+            <span class="post-action__count">{{ post.collectCount }}</span>
           </v-btn>
-          <span class="muted mr-3">{{ post.commentCount }} comments</span>
+
+          <a class="comment-link" href="#comments">
+            <v-icon icon="mdi-comment-outline" size="16" class="mr-1" />
+            {{ post.commentCount }} comments
+          </a>
+
           <v-spacer />
-          <v-btn v-if="isOwner" size="small" variant="text" :to="{ name: 'post-edit', params: { id: post.id } }">
+          <v-btn
+            v-if="isOwner"
+            size="small"
+            variant="text"
+            :to="{ name: 'post-edit', params: { id: post.id } }"
+          >
             Edit
           </v-btn>
           <v-btn v-if="isOwner" size="small" variant="text" color="error" @click="onDelete">Delete</v-btn>
         </div>
-      </v-card>
+      </article>
 
-      <CommentThread class="mt-4" :post-id="post.id" :post-author-id="post.userId" />
+      <CommentThread
+        id="comments"
+        class="post-comments"
+        :post-id="post.id"
+        :post-author-id="post.userId"
+      />
     </template>
+    </div>
   </v-container>
 </template>
 
 <style scoped>
+.article {
+  /* A centred reading column: MDesign.md section 4 caps the measure so prose
+     stays readable instead of stretching across a wide monitor. */
+  max-width: 860px;
+  margin: 0 auto;
+}
+
 .post-card {
-  border: 1px solid $border;
+  padding: var(--md-sys-space-6);
 }
 
 .post-title {
-  font-size: 22px;
+  font-size: var(--md-sys-typescale-title-lg);
   font-weight: 600;
   line-height: 1.35;
+  letter-spacing: 0;
+  @include overflow-wrap-anywhere;
 }
 
-.meta {
-  font-size: 13px;
+.post-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--md-sys-space-2);
+  margin-top: var(--md-sys-space-2);
 }
 
 .author {
   font-weight: 500;
   color: $text-primary;
   text-decoration: none;
+}
+
+.post-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--md-sys-space-2);
+  margin-bottom: var(--md-sys-space-5);
+  font-size: var(--md-sys-typescale-body-sm);
+}
+
+.post-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--md-sys-space-1);
+  margin-top: var(--md-sys-space-5);
+}
+
+.post-divider {
+  margin: var(--md-sys-space-5) 0;
+}
+
+.post-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--md-sys-space-2);
+}
+
+.post-action__count {
+  margin-left: var(--md-sys-space-1);
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+
+.comment-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--md-sys-space-2);
+  min-height: 32px;
+  border-radius: $radius-sm;
+  color: $text-muted;
+  font-size: var(--md-sys-typescale-body-sm);
+  text-decoration: none;
+  transition: color var(--md-sys-motion-short) var(--md-sys-motion-easing);
+}
+
+.comment-link:hover {
+  color: $accent;
+}
+
+.post-comments {
+  margin-top: var(--md-sys-space-4);
+  /* Anchoring to the thread must clear the sticky-free app bar. */
+  scroll-margin-top: calc(#{$header-height} + var(--md-sys-space-4));
+}
+
+@include below($bp-sm) {
+  .post-card {
+    padding: var(--md-sys-space-4);
+  }
+
+  /* Actions wrap onto their own lines rather than overflowing at 320px. */
+  .post-actions {
+    gap: var(--md-sys-space-2);
+  }
 }
 </style>

@@ -72,16 +72,22 @@ onMounted(load)
 </script>
 
 <template>
-  <v-card class="comment-card pa-5">
-    <h2 class="section-title mb-4">{{ comments.length }} comments</h2>
+  <section class="comment-card panel">
+    <h2 class="section-title comment-card__title">
+      {{ comments.length }} {{ comments.length === 1 ? 'comment' : 'comments' }}
+    </h2>
 
-    <div v-if="loading" class="pa-4 text-center">
-      <v-progress-circular indeterminate size="20" />
-    </div>
+    <template v-if="loading && !comments.length">
+      <div v-for="row in 3" :key="row" class="comment-skeleton" aria-hidden="true">
+        <div class="skeleton skeleton--line" />
+        <div class="skeleton skeleton--short" />
+      </div>
+      <p class="sr-only" role="status">Loading comments</p>
+    </template>
 
-    <p v-else-if="!comments.length" class="muted text-body-2">No comments yet.</p>
+    <p v-else-if="!comments.length" class="state-message">No comments yet.</p>
 
-    <div v-for="comment in comments" :key="comment.id" class="comment">
+    <article v-for="comment in comments" :key="comment.id" class="comment">
       <div class="d-flex align-center mb-1">
         <router-link :to="{ name: 'user-profile', params: { id: comment.userId } }" class="author">
           {{ comment.authorNickname ?? 'Unknown' }}
@@ -95,8 +101,9 @@ onMounted(load)
       <div class="d-flex align-center actions">
         <v-btn
           size="x-small"
-          variant="text"
+          :variant="comment.liked ? 'contained' : 'text'"
           :color="comment.liked ? 'primary' : undefined"
+          :aria-pressed="comment.liked"
           @click="toggleLike(comment)"
         >
           <v-icon icon="mdi-heart-outline" size="14" class="mr-1" />{{ comment.likeCount }}
@@ -107,14 +114,15 @@ onMounted(load)
           size="x-small"
           variant="text"
           color="error"
+          :aria-label="`Delete the comment by ${comment.authorNickname ?? 'this user'}`"
           @click="remove(comment)"
         >
           Delete
         </v-btn>
       </div>
 
-      <div v-if="comment.replies?.length" class="replies mt-3">
-        <div v-for="reply in comment.replies" :key="reply.id" class="reply mb-3">
+      <div v-if="comment.replies?.length" class="replies">
+        <article v-for="reply in comment.replies" :key="reply.id" class="reply">
           <div class="d-flex align-center mb-1">
             <router-link :to="{ name: 'user-profile', params: { id: reply.userId } }" class="author">
               {{ reply.authorNickname ?? 'Unknown' }}
@@ -127,17 +135,18 @@ onMounted(load)
           <p class="comment-body mb-1">{{ reply.content }}</p>
           <v-btn
             size="x-small"
-            variant="text"
+            :variant="reply.liked ? 'contained' : 'text'"
             :color="reply.liked ? 'primary' : undefined"
+            :aria-pressed="reply.liked"
             @click="toggleLike(reply)"
           >
             <v-icon icon="mdi-heart-outline" size="13" class="mr-1" />{{ reply.likeCount }}
           </v-btn>
-        </div>
+        </article>
       </div>
-    </div>
+    </article>
 
-    <v-divider class="my-4" />
+    <v-divider class="comment-divider" />
 
     <template v-if="auth.isAuthenticated">
       <v-textarea v-model="draft" rows="2" auto-grow hide-details placeholder="Add a comment" />
@@ -156,23 +165,22 @@ onMounted(load)
     <p v-else class="muted text-body-2 mb-0">
       <router-link :to="{ name: 'login' }">Sign in</router-link> to join the discussion.
     </p>
-  </v-card>
+  </section>
 </template>
 
 <style scoped>
 .comment-card {
-  border: 1px solid $border;
+  padding: var(--md-sys-space-5);
 }
 
-.section-title {
-  font-size: 16px;
-  font-weight: 600;
+.comment-card__title {
+  margin-bottom: var(--md-sys-space-4);
 }
 
 .comment {
-  padding-bottom: 16px;
+  padding-bottom: var(--md-sys-space-4);
   border-bottom: 1px solid $border;
-  margin-bottom: 16px;
+  margin-bottom: var(--md-sys-space-4);
 }
 
 .comment:last-of-type {
@@ -180,22 +188,22 @@ onMounted(load)
 }
 
 .author {
-  font-size: 13px;
+  font-size: var(--md-sys-typescale-body-sm);
   font-weight: 500;
   color: $text-primary;
   text-decoration: none;
 }
 
 .chip {
-  font-size: 11px;
-  height: 18px;
+  height: 20px;
+  font-size: var(--md-sys-typescale-label-xs);
 }
 
 .comment-body {
-  font-size: 14px;
-  line-height: 1.6;
+  font-size: var(--md-sys-typescale-body-md);
+  line-height: var(--md-sys-typescale-body-line);
   white-space: pre-wrap;
-  word-break: break-word;
+  @include overflow-wrap-anywhere;
 }
 
 .actions {
@@ -203,7 +211,42 @@ onMounted(load)
 }
 
 .replies {
-  padding-left: 14px;
+  padding-left: var(--md-sys-space-3);
   border-left: 2px solid $border;
+}
+
+.reply {
+  margin-bottom: var(--md-sys-space-3);
+}
+
+.reply:last-child {
+  margin-bottom: 0;
+}
+
+.comment-divider {
+  margin: var(--md-sys-space-4) 0;
+}
+
+.comment-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--md-sys-space-2);
+  margin-bottom: var(--md-sys-space-4);
+}
+
+.skeleton--line {
+  width: 100%;
+  height: 14px;
+}
+
+.skeleton--short {
+  width: 30%;
+  height: 12px;
+}
+
+@include below($bp-sm) {
+  .comment-card {
+    padding: var(--md-sys-space-4);
+  }
 }
 </style>

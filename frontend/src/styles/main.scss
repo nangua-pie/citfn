@@ -124,6 +124,45 @@ pre {
 }
 
 // -- States ----------------------------------------------------------------
+
+// Status flag: a tinted pill plus a word. Used by the post list and the post
+// header, so it lives here rather than being duplicated per component. The
+// word, not the colour, is what carries the meaning.
+.flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  padding: 1px var(--md-sys-space-2);
+  border-radius: var(--md-sys-shape-corner-full);
+  font-size: var(--md-sys-typescale-label-xs);
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: nowrap;
+  background: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.flag__icon {
+  flex: none;
+}
+
+.flag--pinned {
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+}
+
+.flag--essential,
+.flag--warning {
+  background: var(--md-sys-color-warning-container);
+  color: var(--md-sys-color-on-warning-container);
+}
+
+.flag--error {
+  background: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
+}
+
 // Shared empty / error treatment so every list in the app fails the same way.
 .state-message {
   display: flex;

@@ -208,43 +208,6 @@ const TAG_LIMIT = 3
   @include overflow-wrap-anywhere;
 }
 
-/* Status flags are a tinted pill plus a word: colour never carries the
-   meaning on its own (MDesign.md section 12). */
-.flag {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  flex: none;
-  padding: 1px var(--md-sys-space-2);
-  border-radius: var(--md-sys-shape-corner-full);
-  font-size: var(--md-sys-typescale-label-xs);
-  font-weight: 600;
-  line-height: 1.6;
-  white-space: nowrap;
-  background: $surface-sunken;
-  color: $text-muted;
-}
-
-.flag__icon {
-  flex: none;
-}
-
-.flag--pinned {
-  background: $accent-soft;
-  color: var(--md-sys-color-on-primary-container);
-}
-
-.flag--essential,
-.flag--warning {
-  background: var(--md-sys-color-warning-container);
-  color: var(--md-sys-color-on-warning-container);
-}
-
-.flag--error {
-  background: var(--md-sys-color-error-container);
-  color: var(--md-sys-color-on-error-container);
-}
-
 .stats {
   display: flex;
   align-items: center;
