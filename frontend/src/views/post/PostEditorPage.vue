@@ -49,6 +49,11 @@ function parseTags(raw: string): string[] {
 }
 
 async function submit() {
+  // Guards against a second submit while the first is still in flight; the
+  // button's loading state hides the problem but does not prevent it.
+  if (submitting.value) {
+    return
+  }
   if (!form.value.categoryId) {
     error.value = 'choose a board first'
     return
@@ -91,53 +96,114 @@ onMounted(async () => {
 
 <template>
   <v-container class="page-container">
-    <div class="d-flex align-center mb-4">
-      <h1 class="page-title">{{ isEdit ? 'Edit post' : 'New post' }}</h1>
-      <v-spacer />
-      <v-btn size="small" variant="text" class="mr-2" @click="preview = !preview">
-        {{ preview ? 'Write' : 'Preview' }}
-      </v-btn>
-      <v-btn color="primary" size="small" :loading="submitting" @click="submit">
-        {{ isEdit ? 'Save changes' : 'Publish' }}
-      </v-btn>
-    </div>
+    <div class="editor">
+      <div class="editor-toolbar">
+        <h1 class="page-title">{{ isEdit ? 'Edit post' : 'New post' }}</h1>
+        <v-spacer />
+        <!-- The one high-emphasis action in this group. -->
+        <v-btn color="primary" size="small" :loading="submitting" @click="submit">
+          {{ isEdit ? 'Save changes' : 'Publish' }}
+        </v-btn>
+      </div>
 
-    <v-card class="editor-card pa-5">
-      <v-select
-        v-model="form.categoryId"
-        :items="boardChoices"
-        label="Board"
-      />
+    <v-card class="editor-card panel">
+        <div class="editor-field">
+          <v-select v-model="form.categoryId" :items="boardChoices" label="Board" />
+        </div>
 
-      <v-text-field v-model="form.title" label="Title" maxlength="128" counter />
-      <v-textarea v-model="form.content" label="Content (Markdown)" rows="14" class="mt-2" />
-      <v-text-field
-        v-model="form.tags"
-        label="Tags"
-        hint="Up to five, separated by commas or spaces"
-        persistent-hint
-        class="mt-2"
-      />
+        <div class="editor-field">
+          <v-text-field v-model="form.title" label="Title" maxlength="128" counter />
+        </div>
 
-      <v-alert v-if="error" type="error" variant="outlined" density="compact" class="mt-3">{{ error }}</v-alert>
+        <div class="editor-field">
+          <div class="editor-field__header">
+            <h2 class="section-title">Content</h2>
+            <v-btn size="small" variant="outlined" @click="preview = !preview">
+              {{ preview ? 'Back to editing' : 'Preview' }}
+            </v-btn>
+          </div>
 
-      <template v-if="preview">
-        <v-divider class="my-4" />
-        <h2 class="section-title">Preview</h2>
-        <div class="markdown-body" v-html="renderedPreview" />
-      </template>
+          <!--
+            Editor and preview occupy the same slot, so toggling between them
+            does not move the fields below.
+          -->
+          <v-textarea
+            v-show="!preview"
+            v-model="form.content"
+            label="Body (Markdown)"
+            rows="14"
+            hide-details
+          />
+          <div v-if="preview" class="editor-preview panel-sunken">
+            <div v-if="form.content.trim()" class="markdown-body" v-html="renderedPreview" />
+            <p v-else class="state-message">Nothing to preview yet.</p>
+          </div>
+        </div>
+
+        <div class="editor-field">
+          <v-text-field
+            v-model="form.tags"
+            label="Tags"
+            hint="Up to five, separated by commas or spaces"
+            persistent-hint
+          />
+        </div>
+
+        <v-alert
+          v-if="error"
+          type="error"
+          variant="outlined"
+          density="compact"
+          class="mt-3"
+        >
+          {{ error }}
+        </v-alert>
     </v-card>
+    </div>
   </v-container>
 </template>
 
 <style scoped>
 .editor-card {
-  border: 1px solid $border;
+  padding: var(--md-sys-space-5);
 }
 
-.section-title {
-  font-size: 15px;
-  font-weight: 600;
-  margin-bottom: 8px;
+.editor {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--md-sys-space-2);
+  margin-bottom: var(--md-sys-space-4);
+}
+
+.editor-field {
+  margin-bottom: var(--md-sys-space-4);
+}
+
+.editor-field:last-of-type {
+  margin-bottom: 0;
+}
+
+.editor-field__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--md-sys-space-2);
+  margin-bottom: var(--md-sys-space-2);
+}
+
+.editor-preview {
+  padding: var(--md-sys-space-4);
+  min-height: 320px;
+}
+
+@include below($bp-sm) {
+  .editor-card {
+    padding: var(--md-sys-space-4);
+  }
 }
 </style>

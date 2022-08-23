@@ -50,44 +50,83 @@ async function submit() {
 
 <template>
   <v-container class="auth-container">
-    <v-card class="auth-card pa-6">
-      <h1 class="page-title mb-1">Create an account</h1>
-      <p class="muted text-body-2 mb-4">Takes about a minute.</p>
+    <v-card class="auth-card panel">
+      <div class="auth-body">
+        <h1 class="page-title">Create an account</h1>
+        <p class="muted auth-subtitle">Takes about a minute.</p>
 
-      <v-form @submit.prevent="submit">
-        <v-text-field v-model="form.username" label="Username" autocomplete="username" />
-        <v-text-field v-model="form.nickname" label="Display name (optional)" />
-        <v-text-field v-model="form.email" label="Email" type="email" autocomplete="email" />
-        <div class="d-flex align-start">
-          <v-text-field v-model="form.code" label="Verification code" maxlength="6" class="flex-grow-1" />
-          <v-btn class="ml-2 mt-1" size="default" :loading="sendingCode" :disabled="!form.email" @click="requestCode">
-            {{ codeSent ? 'Resend' : 'Send code' }}
+        <v-form @submit.prevent="submit">
+          <div class="auth-field">
+            <v-text-field v-model="form.username" label="Username" autocomplete="username" required />
+          </div>
+          <div class="auth-field">
+            <v-text-field v-model="form.nickname" label="Display name (optional)" />
+          </div>
+          <div class="auth-field">
+            <v-text-field v-model="form.email" label="Email" type="email" autocomplete="email" required />
+          </div>
+          <!--
+            The code field and its button are one control: the button keeps a
+            full-width target on a phone rather than shrinking to a stub.
+          -->
+          <div class="code-row">
+            <v-text-field
+              v-model="form.code"
+              label="Verification code"
+              maxlength="6"
+              inputmode="numeric"
+              class="code-row__field"
+            />
+            <v-btn
+              variant="outlined"
+              size="default"
+              :loading="sendingCode"
+              :disabled="!form.email || sendingCode"
+              class="code-row__button"
+              @click="requestCode"
+            >
+              {{ codeSent ? 'Resend' : 'Send code' }}
+            </v-btn>
+          </div>
+          <div class="auth-field">
+            <v-text-field
+              v-model="form.password"
+              label="Password"
+              :type="showPassword ? 'text' : 'password'"
+              :append-inner-icon="showPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
+              autocomplete="new-password"
+              hint="At least 8 characters, with a letter and a digit"
+              persistent-hint
+              @click:append-inner="showPassword = !showPassword"
+            />
+          </div>
+          <div class="auth-field">
+            <v-text-field
+              v-model="form.confirm"
+              label="Confirm password"
+              :type="showPassword ? 'text' : 'password'"
+              autocomplete="new-password"
+            />
+          </div>
+          <v-alert v-if="error" type="error" variant="outlined" density="compact" class="mb-4">
+            {{ error }}
+          </v-alert>
+          <v-btn
+            type="submit"
+            color="primary"
+            block
+            :loading="auth.loading"
+            :disabled="auth.loading"
+          >
+            Create account
           </v-btn>
-        </div>
-        <v-text-field
-          v-model="form.password"
-          label="Password"
-          :type="showPassword ? 'text' : 'password'"
-          :append-inner-icon="showPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
-          autocomplete="new-password"
-          hint="At least 8 characters, with a letter and a digit"
-          persistent-hint
-          @click:append-inner="showPassword = !showPassword"
-        />
-        <v-text-field
-          v-model="form.confirm"
-          label="Confirm password"
-          :type="showPassword ? 'text' : 'password'"
-          autocomplete="new-password"
-        />
-        <v-alert v-if="error" type="error" variant="outlined" density="compact" class="mb-4">{{ error }}</v-alert>
-        <v-btn type="submit" color="primary" block :loading="auth.loading">Create account</v-btn>
-      </v-form>
+        </v-form>
 
-      <p class="muted text-body-2 mt-4 mb-0">
-        Already registered?
-        <router-link :to="{ name: 'login' }">Sign in</router-link>
-      </p>
+        <p class="muted auth-footer">
+          Already registered?
+          <router-link :to="{ name: 'login' }">Sign in</router-link>
+        </p>
+      </div>
     </v-card>
   </v-container>
 </template>
@@ -96,12 +135,69 @@ async function submit() {
 .auth-container {
   display: flex;
   justify-content: center;
-  padding-top: 48px;
+  padding: var(--md-sys-space-12) var(--md-sys-layout-gutter);
 }
 
 .auth-card {
   width: 100%;
   max-width: 420px;
-  border: 1px solid $border;
+}
+
+.auth-body {
+  padding: var(--md-sys-space-6);
+}
+
+.auth-subtitle {
+  margin: 0 0 var(--md-sys-space-5);
+  font-size: var(--md-sys-typescale-body-md);
+}
+
+.auth-field {
+  margin-bottom: var(--md-sys-space-2);
+}
+
+.auth-footer {
+  margin: var(--md-sys-space-5) 0 0;
+  font-size: var(--md-sys-typescale-body-md);
+}
+
+.code-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--md-sys-space-2);
+  margin-bottom: var(--md-sys-space-2);
+}
+
+.code-row__field {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.code-row__button {
+  /* Offsets the field's own top padding so the button lines up with the
+     input rather than sitting a little high. */
+  margin-top: 6px;
+  white-space: nowrap;
+}
+
+/* Stacked on a phone: a half-width button next to a field is too small a
+   target and clips the label. */
+@include below($bp-sm) {
+  .auth-container {
+    padding-top: var(--md-sys-space-8);
+  }
+
+  .auth-body {
+    padding: var(--md-sys-space-4);
+  }
+
+  .code-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .code-row__button {
+    margin-top: 0;
+  }
 }
 </style>

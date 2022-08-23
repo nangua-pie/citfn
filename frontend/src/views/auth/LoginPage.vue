@@ -27,28 +27,43 @@ async function submit() {
 
 <template>
   <v-container class="auth-container">
-    <v-card class="auth-card pa-6">
-      <h1 class="page-title mb-1">Sign in</h1>
-      <p class="muted text-body-2 mb-4">Welcome back.</p>
+    <v-card class="auth-card panel">
+      <div class="auth-body">
+        <h1 class="page-title">Sign in</h1>
+        <p class="muted auth-subtitle">Welcome back.</p>
 
-      <v-form @submit.prevent="submit">
-        <v-text-field v-model="username" label="Username or email" autocomplete="username" />
-        <v-text-field
-          v-model="password"
-          label="Password"
-          :type="showPassword ? 'text' : 'password'"
-          :append-inner-icon="showPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
-          autocomplete="current-password"
-          @click:append-inner="showPassword = !showPassword"
-        />
-        <v-alert v-if="error" type="error" variant="outlined" density="compact" class="mb-4">{{ error }}</v-alert>
-        <v-btn type="submit" color="primary" block :loading="auth.loading">Sign in</v-btn>
-      </v-form>
+        <v-form @submit.prevent="submit">
+          <div class="auth-field">
+            <v-text-field
+              v-model="username"
+              label="Username or email"
+              autocomplete="username"
+              required
+            />
+          </div>
+          <div class="auth-field">
+            <v-text-field
+              v-model="password"
+              label="Password"
+              :type="showPassword ? 'text' : 'password'"
+              :append-inner-icon="showPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
+              autocomplete="current-password"
+              @click:append-inner="showPassword = !showPassword"
+            />
+          </div>
+          <v-alert v-if="error" type="error" variant="outlined" density="compact" class="mb-4">
+            {{ error }}
+          </v-alert>
+          <v-btn type="submit" color="primary" block :loading="auth.loading" :disabled="auth.loading">
+            Sign in
+          </v-btn>
+        </v-form>
 
-      <p class="muted text-body-2 mt-4 mb-0">
-        No account yet?
-        <router-link :to="{ name: 'register' }">Create one</router-link>
-      </p>
+        <p class="muted auth-footer">
+          No account yet?
+          <router-link :to="{ name: 'register' }">Create one</router-link>
+        </p>
+      </div>
     </v-card>
   </v-container>
 </template>
@@ -57,12 +72,39 @@ async function submit() {
 .auth-container {
   display: flex;
   justify-content: center;
-  padding-top: 48px;
+  padding: var(--md-sys-space-12) var(--md-sys-layout-gutter);
 }
 
 .auth-card {
   width: 100%;
   max-width: 380px;
-  border: 1px solid $border;
+}
+
+.auth-body {
+  padding: var(--md-sys-space-6);
+}
+
+.auth-subtitle {
+  margin: 0 0 var(--md-sys-space-5);
+  font-size: var(--md-sys-typescale-body-md);
+}
+
+.auth-field {
+  margin-bottom: var(--md-sys-space-2);
+}
+
+.auth-footer {
+  margin: var(--md-sys-space-5) 0 0;
+  font-size: var(--md-sys-typescale-body-md);
+}
+
+@include below($bp-sm) {
+  .auth-container {
+    padding-top: var(--md-sys-space-8);
+  }
+
+  .auth-body {
+    padding: var(--md-sys-space-4);
+  }
 }
 </style>

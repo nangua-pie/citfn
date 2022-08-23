@@ -90,19 +90,19 @@ onMounted(() => {
     <h1 class="page-title mb-4">Settings</h1>
 
     <div class="settings-layout">
-      <v-card class="settings-card pa-5">
-        <h2 class="section-title">Profile</h2>
+      <section class="settings-card panel">
+        <h2 class="section-title settings-card__title">Profile</h2>
 
-        <div class="d-flex align-center mb-4">
+        <div class="avatar-row">
           <v-avatar size="64" class="mr-4">
             <v-img v-if="form.avatarUrl" :src="form.avatarUrl" />
           </v-avatar>
           <div>
             <input ref="avatarInput" type="file" accept="image/*" class="d-none" @change="pickAvatar" />
-            <v-btn size="small" :loading="uploading" @click="avatarInput?.click()">
+            <v-btn size="small" variant="outlined" :loading="uploading" @click="avatarInput?.click()">
               Upload avatar
             </v-btn>
-            <div class="muted text-caption mt-1">PNG, JPG, GIF or WebP, up to 5 MB.</div>
+            <div class="muted avatar-row__hint">PNG, JPG, GIF or WebP, up to 5 MB.</div>
           </div>
         </div>
 
@@ -112,16 +112,32 @@ onMounted(() => {
         <v-alert v-if="profileError" type="error" variant="outlined" density="compact" class="mb-3">
           {{ profileError }}
         </v-alert>
-        <v-alert v-if="profileMessage" type="success" variant="outlined" density="compact" class="mb-3">
+        <!-- role=status so a screen reader announces the confirmation. -->
+        <v-alert
+          v-if="profileMessage"
+          type="success"
+          variant="outlined"
+          density="compact"
+          class="mb-3"
+          role="status"
+        >
           {{ profileMessage }}
         </v-alert>
 
-        <v-btn color="primary" size="small" :loading="savingProfile" @click="saveProfile">Save profile</v-btn>
-      </v-card>
+        <v-btn
+          color="primary"
+          size="small"
+          :loading="savingProfile"
+          :disabled="savingProfile"
+          @click="saveProfile"
+        >
+          Save profile
+        </v-btn>
+      </section>
 
-      <v-card class="settings-card pa-5">
-        <h2 class="section-title">Password</h2>
-        <p class="muted text-body-2">Changing your password signs out every device.</p>
+      <section class="settings-card panel">
+        <h2 class="section-title settings-card__title">Password</h2>
+        <p class="muted settings-card__note">Changing your password signs out every device.</p>
 
         <v-text-field v-model="password.current" label="Current password" type="password" autocomplete="current-password" />
         <v-text-field
@@ -143,8 +159,16 @@ onMounted(() => {
           {{ passwordError }}
         </v-alert>
 
-        <v-btn color="primary" size="small" :loading="savingPassword" @click="savePassword">Change password</v-btn>
-      </v-card>
+        <v-btn
+          color="primary"
+          size="small"
+          :loading="savingPassword"
+          :disabled="savingPassword"
+          @click="savePassword"
+        >
+          Change password
+        </v-btn>
+      </section>
     </div>
   </v-container>
 </template>
@@ -152,18 +176,42 @@ onMounted(() => {
 <style scoped>
 .settings-layout {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 20px;
+  /*
+   * minmax(320px, 1fr) rather than a bare 1fr: an automatic minimum would let
+   * one wide field widen the track past a 320px viewport.
+   */
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+  gap: var(--md-sys-space-5);
   align-items: start;
 }
 
 .settings-card {
-  border: 1px solid $border;
+  padding: var(--md-sys-space-5);
 }
 
-.section-title {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 12px;
+.settings-card__title {
+  margin-bottom: var(--md-sys-space-3);
+}
+
+.settings-card__note {
+  margin: 0 0 var(--md-sys-space-4);
+  font-size: var(--md-sys-typescale-body-md);
+}
+
+.avatar-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--md-sys-space-4);
+}
+
+.avatar-row__hint {
+  margin-top: var(--md-sys-space-1);
+  font-size: var(--md-sys-typescale-label-sm);
+}
+
+@include below($bp-sm) {
+  .settings-card {
+    padding: var(--md-sys-space-4);
+  }
 }
 </style>
