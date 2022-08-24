@@ -58,40 +58,75 @@ async function onFilePicked(event: Event, isImage: boolean) {
       auto-grow
       hide-details
       :maxlength="MAX_LENGTH"
+      aria-label="Write a message"
       placeholder="Write a message. Enter to send, Shift+Enter for a new line."
       @keydown.enter.exact.prevent="send"
     />
-    <div class="d-flex align-center mt-2">
+    <div class="composer-actions">
       <input ref="imageInput" type="file" accept="image/*" class="d-none" @change="onFilePicked($event, true)" />
       <input ref="fileInput" type="file" class="d-none" @change="onFilePicked($event, false)" />
-      <v-btn icon size="small" variant="text" :loading="uploading" title="Attach an image" @click="imageInput?.click()">
+      <v-btn
+        icon
+        size="small"
+        variant="text"
+        :loading="uploading"
+        title="Attach an image"
+        aria-label="Attach an image"
+        @click="imageInput?.click()"
+      >
         <v-icon icon="mdi-image-outline" size="18" />
       </v-btn>
-      <v-btn icon size="small" variant="text" :loading="uploading" title="Attach a file" @click="fileInput?.click()">
+      <v-btn
+        icon
+        size="small"
+        variant="text"
+        :loading="uploading"
+        title="Attach a file"
+        aria-label="Attach a file"
+        @click="fileInput?.click()"
+      >
         <v-icon icon="mdi-paperclip" size="18" />
       </v-btn>
       <v-spacer />
-      <span class="counter mr-3">{{ draft.length }}/{{ MAX_LENGTH }}</span>
-      <v-btn color="primary" size="small" :disabled="!draft.trim()" @click="send">Send</v-btn>
+      <span class="counter">{{ draft.length }}/{{ MAX_LENGTH }}</span>
+      <v-btn
+        color="primary"
+        size="small"
+        :disabled="!draft.trim() || sending"
+        :loading="sending"
+        @click="send"
+      >
+        Send
+      </v-btn>
     </div>
-    <p v-if="error" class="error mt-1 mb-0">{{ error }}</p>
+    <p v-if="error" class="error" role="alert">{{ error }}</p>
   </div>
 </template>
 
 <style scoped>
 .composer {
-  padding: 12px;
+  padding: var(--md-sys-space-3);
   border-top: 1px solid $border;
   background: $surface;
 }
 
+.composer-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--md-sys-space-1);
+  margin-top: var(--md-sys-space-2);
+}
+
 .counter {
-  font-size: 11px;
+  margin-right: var(--md-sys-space-2);
+  font-size: var(--md-sys-typescale-label-xs);
   color: $text-muted;
+  font-variant-numeric: tabular-nums;
 }
 
 .error {
-  font-size: 12px;
+  margin: var(--md-sys-space-1) 0 0;
+  font-size: var(--md-sys-typescale-label-sm);
   color: $danger;
 }
 </style>

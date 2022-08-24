@@ -20,12 +20,23 @@ function preview(conversation: Conversation): string {
 function when(conversation: Conversation): string {
   return conversation.lastMessageTime ? dayjs(conversation.lastMessageTime).format('MMM D') : ''
 }
+
+/**
+ * One spoken sentence per row. The visual row leans on truncation, a colour
+ * dot and a bare number, none of which survive a screen reader.
+ */
+function rowLabel(conversation: Conversation): string {
+  const name = conversation.targetNickname ?? 'Unknown user'
+  const unread = conversation.unreadCount > 0 ? `, ${conversation.unreadCount} unread` : ''
+  return `${name}, ${conversation.targetOnline ? 'online' : 'offline'}. ${preview(conversation)}${unread}`
+}
 </script>
 
 <template>
   <div class="conversation-list">
-    <div v-if="!conversations.length" class="empty pa-4 text-center">
-      <p class="mb-0">No conversations yet.</p>
+    <div v-if="!conversations.length" class="state-message">
+      <v-icon icon="mdi-message-text-outline" size="28" />
+      <span class="state-message__title">No conversations yet</span>
       <p class="muted mb-0">Open a user profile to start one.</p>
     </div>
 
@@ -36,12 +47,15 @@ function when(conversation: Conversation): string {
       :class="{ 'row--active': conversation.id === activeId }"
       role="button"
       tabindex="0"
+      :aria-current="conversation.id === activeId ? 'true' : undefined"
+      :aria-label="rowLabel(conversation)"
       @click="emit('select', conversation.id)"
       @keydown.enter="emit('select', conversation.id)"
+      @keydown.space.prevent="emit('select', conversation.id)"
     >
       <v-badge dot :color="conversation.targetOnline ? 'success' : 'transparent'" class="presence mr-1">
         <v-avatar size="36">
-          <v-img v-if="conversation.targetAvatarUrl" :src="conversation.targetAvatarUrl" />
+          <v-img v-if="conversation.targetAvatarUrl" :src="conversation.targetAvatarUrl" alt="" />
           <span v-else>{{ conversation.targetNickname?.charAt(0) ?? '?' }}</span>
         </v-avatar>
       </v-badge>
@@ -69,6 +83,7 @@ function when(conversation: Conversation): string {
         size="x-small"
         variant="text"
         title="Delete conversation"
+        :aria-label="`Delete the conversation with ${conversation.targetNickname ?? 'this user'}`"
         @click.stop="emit('remove', conversation.id)"
       >
         <v-icon icon="mdi-close" size="16" />
@@ -86,37 +101,45 @@ function when(conversation: Conversation): string {
 .row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
+  gap: var(--md-sys-space-2);
+  padding: var(--md-sys-space-2) var(--md-sys-space-3);
   cursor: pointer;
   border-bottom: 1px solid $border;
+  transition: background-color var(--md-sys-motion-short) var(--md-sys-motion-easing);
 }
 
 .row:hover {
   background: $surface-muted;
 }
 
+/* Selection is a filled container plus a heavier name, so it does not rely on
+   colour alone. */
 .row--active {
   background: $accent-soft;
 }
 
+.row--active .name {
+  font-weight: 600;
+}
+
 .name {
-  font-size: 14px;
+  font-size: var(--md-sys-typescale-body-md);
   font-weight: 500;
 }
 
 .preview {
-  font-size: 12px;
   max-width: 180px;
+  font-size: var(--md-sys-typescale-label-sm);
 }
 
 .when {
-  font-size: 11px;
+  flex: none;
+  margin-left: var(--md-sys-space-2);
+  font-size: var(--md-sys-typescale-label-xs);
 }
 
-.empty {
-  color: $text-muted;
-  font-size: 13px;
+.row .presence {
+  flex: none;
 }
 
 .min-width-0 {

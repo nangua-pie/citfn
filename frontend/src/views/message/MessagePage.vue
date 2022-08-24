@@ -30,11 +30,18 @@ onMounted(() => {
 <template>
   <v-container class="page-container">
     <div class="message-layout">
-      <aside class="sidebar">
-        <div class="sidebar-header d-flex align-center px-3 py-2">
+      <aside class="sidebar" aria-label="Conversations">
+        <div class="sidebar-header">
           <span class="page-title">Messages</span>
           <v-spacer />
-          <v-btn icon size="x-small" variant="text" title="Reload" @click="messages.loadConversations()">
+          <v-btn
+            icon
+            size="x-small"
+            variant="text"
+            aria-label="Reload conversations"
+            title="Reload conversations"
+            @click="messages.loadConversations()"
+          >
             <v-icon icon="mdi-refresh" size="18" />
           </v-btn>
         </div>
@@ -72,7 +79,14 @@ onMounted(() => {
    * stretch the chat column past the viewport instead of wrapping.
    */
   grid-template-columns: 300px minmax(0, 1fr);
-  height: calc(100vh - 56px - 48px);
+  /*
+   * The transcript scrolls inside this box, so it has to be bounded to the
+   * space the header and page padding leave. dvh keeps it correct while a
+   * mobile browser's chrome slides in and out; the vh line is the fallback for
+   * engines without dvh.
+   */
+  height: calc(100vh - #{$header-height} - (2 * var(--md-sys-space-6)));
+  height: calc(100dvh - #{$header-height} - (2 * var(--md-sys-space-6)));
   border: 1px solid $border;
   border-radius: $radius-md;
   overflow: hidden;
@@ -86,6 +100,10 @@ onMounted(() => {
 }
 
 .sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: var(--md-sys-space-2);
+  padding: var(--md-sys-space-2) var(--md-sys-space-3);
   border-bottom: 1px solid $border;
 }
 
@@ -93,15 +111,26 @@ onMounted(() => {
   min-width: 0;
 }
 
-@media (max-width: 840px) {
+/* Below the tablet range the two panes stack: the list is capped so the
+   transcript keeps the larger share of the screen. */
+@include below($bp-md) {
   .message-layout {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, auto) minmax(0, 1fr);
   }
 
   .sidebar {
     border-right: none;
     border-bottom: 1px solid $border;
-    max-height: 220px;
+    max-height: 38vh;
+  }
+}
+
+@include below($bp-xs) {
+  /* Reclaim the gutters: the two panes are the whole screen here. */
+  :deep(.v-application .page-container) {
+    padding-left: 0;
+    padding-right: 0;
   }
 }
 </style>

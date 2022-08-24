@@ -45,26 +45,33 @@ watch(
 <template>
   <div class="chat-panel">
     <template v-if="conversation">
-      <div class="chat-header d-flex align-center px-4 py-2">
+      <div class="chat-header">
         <v-badge dot :color="conversation.targetOnline ? 'success' : 'transparent'" class="mr-2">
           <v-avatar size="32">
-            <v-img v-if="conversation.targetAvatarUrl" :src="conversation.targetAvatarUrl" />
+            <v-img v-if="conversation.targetAvatarUrl" :src="conversation.targetAvatarUrl" alt="" />
             <span v-else>{{ conversation.targetNickname?.charAt(0) ?? '?' }}</span>
           </v-avatar>
         </v-badge>
         <div class="min-width-0">
           <div class="text-truncate font-weight-medium">{{ conversation.targetNickname ?? 'Unknown user' }}</div>
-          <div class="muted text-caption">{{ conversation.targetOnline ? 'Online' : 'Offline' }}</div>
+          <!-- The word states the status; the dot only reinforces it. -->
+          <div class="muted chat-header__status">
+            {{ conversation.targetOnline ? 'Online' : 'Offline' }}
+          </div>
         </div>
       </div>
 
-      <div ref="scroller" class="chat-body px-4 py-3">
+      <div ref="scroller" class="chat-body">
         <div v-if="hasMore" class="d-flex justify-center mb-3">
-          <v-btn size="x-small" variant="text" :loading="loading" @click="emit('load-older')">Load earlier</v-btn>
+          <v-btn size="x-small" variant="outlined" :loading="loading" @click="emit('load-older')">
+            Load earlier messages
+          </v-btn>
         </div>
 
-        <div v-if="!messages.length && !loading" class="empty text-center muted py-8">
-          No messages yet. Say something.
+        <div v-if="!messages.length && !loading" class="state-message">
+          <v-icon icon="mdi-message-text-outline" size="28" />
+          <span class="state-message__title">No messages yet</span>
+          <span>Say something to start the conversation.</span>
         </div>
 
         <MessageItem
@@ -84,11 +91,10 @@ watch(
       <MessageComposer @send="emit('send', $event)" />
     </template>
 
-    <div v-else class="empty d-flex align-center justify-content-center h-100">
-      <div class="text-center">
-        <v-icon icon="mdi-message-text-outline" size="36" class="muted" />
-        <p class="muted mt-2 mb-0">Select a conversation to start reading</p>
-      </div>
+    <div v-else class="state-message h-100">
+      <v-icon icon="mdi-message-text-outline" size="36" />
+      <span class="state-message__title">Select a conversation</span>
+      <span>Choose a thread on the left to start reading.</span>
     </div>
   </div>
 </template>
@@ -102,21 +108,34 @@ watch(
 }
 
 .chat-header {
+  display: flex;
+  align-items: center;
+  gap: var(--md-sys-space-2);
+  padding: var(--md-sys-space-2) var(--md-sys-space-4);
   border-bottom: 1px solid $border;
+}
+
+.chat-header__status {
+  font-size: var(--md-sys-typescale-label-sm);
 }
 
 .chat-body {
   flex: 1;
+  padding: var(--md-sys-space-3) var(--md-sys-space-4);
+  /* The transcript scrolls here, so it must be allowed to shrink rather than
+     pushing the composer off screen. */
+  min-height: 0;
   overflow-y: auto;
   background: $surface-muted;
 }
 
-.empty {
-  color: $text-muted;
-  font-size: 13px;
-}
-
 .min-width-0 {
   min-width: 0;
+}
+
+@include below($bp-sm) {
+  .chat-body {
+    padding: var(--md-sys-space-3) var(--md-sys-space-2);
+  }
 }
 </style>

@@ -63,9 +63,13 @@ function onRecall() {
       </p>
       <p v-else class="mb-0">{{ message.content }}</p>
 
+      <!--
+        The tick alone is ambiguous, so the timestamp is what a screen reader
+        announces; aria-hidden keeps the decorative tick out of the way.
+      -->
       <div class="meta d-flex align-center justify-end mt-1">
-        <span>{{ time }}</span>
-        <v-icon v-if="own && !recalled" icon="mdi-check" size="12" class="ml-1" />
+        <time :datetime="message.sendTime">{{ time }}</time>
+        <v-icon v-if="own && !recalled" icon="mdi-check" size="12" class="ml-1" aria-hidden="true" />
       </div>
     </div>
 
@@ -77,7 +81,14 @@ function onRecall() {
         leave the button with no click handler at all.
       -->
       <template #activator="{ props: activatorProps }">
-        <v-btn icon size="x-small" variant="text" class="ml-1" v-bind="activatorProps">
+        <v-btn
+          icon
+          size="x-small"
+          variant="text"
+          class="ml-1"
+          v-bind="activatorProps"
+          :aria-label="`Options for the message sent at ${time}`"
+        >
           <v-icon icon="mdi-dots-vertical" size="16" />
         </v-btn>
       </template>
@@ -92,16 +103,19 @@ function onRecall() {
 
 <style scoped>
 .bubble {
-  max-width: 68%;
-  padding: 8px 10px;
+  /* A bubble never takes more than this much of the row, so a long message
+     wraps instead of stretching the transcript. */
+  max-width: min(68%, 520px);
+  padding: var(--md-sys-space-2) var(--md-sys-space-3);
   border-radius: $radius-md;
-  font-size: 14px;
-  line-height: 1.5;
-  word-break: break-word;
+  font-size: var(--md-sys-typescale-body-md);
+  line-height: 1.55;
+  @include overflow-wrap-anywhere;
 }
 
 .bubble--own {
   background: $accent-soft;
+  color: var(--md-sys-color-on-primary-container);
 }
 
 .bubble--peer {
@@ -110,7 +124,7 @@ function onRecall() {
 }
 
 .meta {
-  font-size: 11px;
+  font-size: var(--md-sys-typescale-label-xs);
   color: $text-muted;
 }
 
@@ -122,5 +136,7 @@ function onRecall() {
 .file-link {
   color: $accent;
   text-decoration: none;
+  /* A long attachment name must not widen the bubble. */
+  @include overflow-wrap-anywhere;
 }
 </style>
