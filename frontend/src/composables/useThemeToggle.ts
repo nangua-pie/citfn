@@ -19,14 +19,19 @@ function readStoredTheme(): ThemeName | null {
 }
 
 function preferredTheme(): ThemeName {
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  // matchMedia is missing in some non-browser environments. Resolve it to a
+  // value first so an absent implementation reads as "no preference" rather
+  // than throwing on the property access.
+  const query = window.matchMedia?.('(prefers-color-scheme: dark)')
+  return query?.matches ? 'dark' : 'light'
 }
 
 export function useThemeToggle() {
   const theme = useTheme()
-  const current = ref<ThemeName>(
-    readStoredTheme() ?? (theme.themes.value[theme.current.value]?.dark ? 'dark' : 'light'),
-  )
+  // A stored choice wins; otherwise follow the operating system. Vuetify's
+  // own current theme is not consulted here because it is whatever the plugin
+  // shipped with, which says nothing about what the visitor asked for.
+  const current = ref<ThemeName>(readStoredTheme() ?? preferredTheme())
 
   // Vuetify only stamps `.v-theme--dark` when its own current theme has the
   // `dark` flag. `current` is the *name* of that theme, which is what the
