@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import dayjs from 'dayjs'
 
+import { machineDate } from '@/utils/date'
 import type { ImMessage } from '@/types'
 
 const props = defineProps<{
@@ -28,6 +29,7 @@ const canRecall = computed(() => {
 })
 
 const time = computed(() => dayjs(props.message.sendTime).format('HH:mm'))
+const machineTime = computed(() => machineDate(props.message.sendTime))
 
 function onRecall() {
   menu.value = false
@@ -68,7 +70,7 @@ function onRecall() {
         announces; aria-hidden keeps the decorative tick out of the way.
       -->
       <div class="meta d-flex align-center justify-end mt-1">
-        <time :datetime="message.sendTime">{{ time }}</time>
+        <time :datetime="machineTime">{{ time }}</time>
         <v-icon v-if="own && !recalled" icon="mdi-check" size="12" class="ml-1" aria-hidden="true" />
       </div>
     </div>

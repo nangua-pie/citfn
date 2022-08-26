@@ -6,6 +6,7 @@ import dayjs from 'dayjs'
 import { deletePost, getPost, toggleCollect, toggleLike } from '@/api/post'
 import { useAuthStore } from '@/stores/auth'
 import { renderMarkdown } from '@/utils/markdown'
+import { machineDate } from '@/utils/date'
 import { postStatusLabel, postStatusTone } from '@/utils/post'
 import { routeId } from '@/utils/snowflake'
 import CommentThread from '@/components/CommentThread.vue'
@@ -119,7 +120,7 @@ watch(() => route.params.id, load)
           <router-link :to="{ name: 'user-profile', params: { id: post.userId } }" class="author">
             {{ post.authorNickname ?? 'Unknown' }}
           </router-link>
-          <time :datetime="post.createTime" class="muted">
+          <time :datetime="machineDate(post.createTime)" class="muted">
             {{ dayjs(post.createTime).format('MMM D, YYYY HH:mm') }}
           </time>
           <span class="muted">·</span>

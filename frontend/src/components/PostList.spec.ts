@@ -53,9 +53,21 @@ describe('PostList content', () => {
     expect(wrapper.text()).toContain('likes')
   })
 
-  it('renders a machine-readable timestamp', () => {
-    const wrapper = mountWithApp(PostList, { props: { posts: [makePost()] } })
-    expect(wrapper.find('time').attributes('datetime')).toBe('2022-06-20 10:21:00')
+  it('emits a datetime attribute the browser will accept', () => {
+    // The API sends `MM/dd/yyyy HH:mm:ss`, which is not a valid value for
+    // the datetime attribute, so it must be converted rather than passed on.
+    const wrapper = mountWithApp(PostList, {
+      props: { posts: [makePost({ createTime: '06/20/2022 10:21:00' })] },
+    })
+    const datetime = wrapper.find('time').attributes('datetime')
+    expect(datetime).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)
+  })
+
+  it('omits the datetime attribute rather than emitting an invalid one', () => {
+    const wrapper = mountWithApp(PostList, {
+      props: { posts: [makePost({ createTime: 'whenever' })] },
+    })
+    expect(wrapper.find('time').attributes('datetime')).toBeUndefined()
   })
 })
 

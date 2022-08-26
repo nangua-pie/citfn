@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import dayjs from 'dayjs'
 
+import { machineDate } from '@/utils/date'
 import { postStatusLabel, postStatusTone } from '@/utils/post'
 import type { Post } from '@/types'
 
@@ -105,7 +106,7 @@ const TAG_LIMIT = 3
             <span v-if="post.categoryName" class="post-meta__board">
               {{ post.categoryName }}
             </span>
-            <time :datetime="post.createTime" class="post-meta__time">
+            <time :datetime="machineDate(post.createTime)" class="post-meta__time">
               {{ dayjs(post.createTime).format('MMM D, YYYY') }}
             </time>
             <span v-for="tag in post.tags?.slice(0, TAG_LIMIT)" :key="tag" class="post-meta__tag">
