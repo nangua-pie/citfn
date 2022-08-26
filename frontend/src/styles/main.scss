@@ -21,11 +21,13 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-// The app shell owns the page background so the dark theme, which Vuetify
-// scopes to `.v-theme--dark` on this element, can repaint it.
+// Vuetify paints the themed background itself through --v-theme-background, so
+// nothing overrides it here. What it cannot do is cover the viewport: its own
+// `.v-layout--full-height { height: 100% }` resolves against a body with no
+// height, so a short page would leave an untinted strip below the content. On
+// the dark theme that strip is a glaring white block.
 .v-application {
-  background-color: var(--md-sys-color-background) !important;
-  color: var(--md-sys-color-on-surface) !important;
+  min-height: 100vh;
 }
 
 // Long identifiers and URLs must wrap rather than widen the layout.

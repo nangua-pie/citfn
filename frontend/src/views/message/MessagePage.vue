@@ -128,7 +128,7 @@ onMounted(() => {
 
 @include below($bp-xs) {
   /* Reclaim the gutters: the two panes are the whole screen here. */
-  :deep(.v-application .page-container) {
+  .page-container {
     padding-left: 0;
     padding-right: 0;
   }
