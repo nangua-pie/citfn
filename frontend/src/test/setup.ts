@@ -20,6 +20,24 @@ if (typeof globalThis.CSS === 'undefined') {
   })
 }
 
+// Vuetify's layout service observes the app shell with ResizeObserver to work
+// out the size of the header and drawers. jsdom 19 has no such API, so the
+// first VApp mount throws before any assertion runs.
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  class ResizeObserverStub {
+    observe() {}
+
+    unobserve() {}
+
+    disconnect() {}
+  }
+  Object.defineProperty(globalThis, 'ResizeObserver', {
+    configurable: true,
+    writable: true,
+    value: ResizeObserverStub,
+  })
+}
+
 // Marks this file as a module, so `--isolatedModules` does not treat the
 // shim above as a global script.
 export {}

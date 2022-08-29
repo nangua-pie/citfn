@@ -1,18 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { nextTick, ref } from 'vue'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 
-// Vuetify's theme is injected, so the composable is exercised against a stand
-// in that exposes exactly the two members it touches: the current theme name
-// and the theme definitions.
-const current = ref('light')
-const themes = ref({
-  light: { dark: false },
-  dark: { dark: true },
-})
-
-vi.mock('vuetify', () => ({
-  useTheme: () => ({ current, themes }),
-}))
+import { useThemeToggle } from '@/composables/useThemeToggle'
 
 const STORAGE_KEY = 'forum-theme'
 
@@ -32,72 +21,83 @@ function restoreMatchMedia() {
   }
 }
 
-async function loadComposable() {
-  const module = await import('@/composables/useThemeToggle')
-  return module.useThemeToggle()
-}
-
 describe('useThemeToggle', () => {
   beforeEach(() => {
     localStorage.clear()
-    current.value = 'light'
-    themes.value = { light: { dark: false }, dark: { dark: true } }
   })
 
-  afterEach(() => {
-    restoreMatchMedia()
-  })
+  it('flips between light and dark and reports the state', async () => {
+    const { themeName, isDark, toggle, set } = useThemeToggle()
+    set('light')
 
-  it('starts light when nothing is stored and the system expresses no preference', async () => {
-    const { current: name, isDark } = await loadComposable()
-    expect(name.value).toBe('light')
-    expect(isDark.value).toBe(false)
-  })
-
-  it('flips the theme and reports the new state', async () => {
-    const { current: name, isDark, toggle } = await loadComposable()
     toggle()
     await nextTick()
-    expect(name.value).toBe('dark')
+    expect(themeName.value).toBe('dark')
     expect(isDark.value).toBe(true)
 
     toggle()
     await nextTick()
-    expect(name.value).toBe('light')
-  })
-
-  it('pushes the chosen theme into Vuetify so .v-theme--dark is applied', async () => {
-    const { toggle } = await loadComposable()
-    expect(current.value).toBe('light')
-    toggle()
-    await nextTick()
-    expect(current.value).toBe('dark')
+    expect(themeName.value).toBe('light')
+    expect(isDark.value).toBe(false)
   })
 
   it('persists the choice so a reload does not flash the wrong theme', async () => {
-    const { toggle } = await loadComposable()
-    toggle()
+    const { set } = useThemeToggle()
+    set('light')
+
+    useThemeToggle().toggle()
     await nextTick()
     expect(localStorage.getItem(STORAGE_KEY)).toBe('dark')
   })
 
-  it('restores a stored choice over the system preference', async () => {
-    localStorage.setItem(STORAGE_KEY, 'dark')
-    stubMatchMedia(false)
-
-    const { current: name } = await loadComposable()
-    expect(name.value).toBe('dark')
+  it('round-trips through the stored value', async () => {
+    const { themeName, set } = useThemeToggle()
+    set('dark')
+    await nextTick()
+    expect(themeName.value).toBe('dark')
+    expect(localStorage.getItem(STORAGE_KEY)).toBe('dark')
   })
 
   it('follows prefers-color-scheme on a first visit', async () => {
+    // The module reads storage once when imported, so the preference has to be
+    // in place before the module is loaded.
+    restoreMatchMedia()
     stubMatchMedia(true)
-    const { current: name } = await loadComposable()
-    expect(name.value).toBe('dark')
+    vi.resetModules()
+    try {
+      const fresh = await import('@/composables/useThemeToggle')
+      expect(fresh.useThemeToggle().themeName.value).toBe('dark')
+    } finally {
+      restoreMatchMedia()
+      vi.resetModules()
+    }
+  })
+
+  it('prefers a stored choice over the system preference', async () => {
+    localStorage.setItem(STORAGE_KEY, 'light')
+    restoreMatchMedia()
+    stubMatchMedia(true)
+    vi.resetModules()
+    try {
+      const fresh = await import('@/composables/useThemeToggle')
+      expect(fresh.useThemeToggle().themeName.value).toBe('light')
+    } finally {
+      restoreMatchMedia()
+      vi.resetModules()
+    }
   })
 
   it('ignores a corrupted stored value instead of trusting it', async () => {
     localStorage.setItem(STORAGE_KEY, 'chartreuse')
-    const { current: name } = await loadComposable()
-    expect(name.value).toBe('light')
+    restoreMatchMedia()
+    stubMatchMedia(false)
+    vi.resetModules()
+    try {
+      const fresh = await import('@/composables/useThemeToggle')
+      expect(fresh.useThemeToggle().themeName.value).toBe('light')
+    } finally {
+      restoreMatchMedia()
+      vi.resetModules()
+    }
   })
 })

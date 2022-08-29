@@ -1,55 +1,64 @@
-import { computed, ref, watch } from 'vue'
-import { useTheme } from 'vuetify'
+import { computed, ref } from 'vue'
 
 /**
- * Light / dark theme switch.
+ * Light / dark theme state.
  *
- * MDesign.md section 3 requires both themes. The chosen value is kept in
- * localStorage so a reload does not flash the wrong theme, and the first visit
- * follows the operating system's `prefers-color-scheme`.
+ * Vuetify 3.0.0-beta.0 offers no way to set the theme from inside the app.
+ * `useTheme()` returns the object `VApp` re-provides to its children, in
+ * which `current` has been replaced by a getter-only computed:
+ *
+ *   const newTheme = { ...theme, current, themeClasses }   // computed, read only
+ *   provide(ThemeSymbol, newTheme)
+ *
+ * Writing to it throws "computed value is readonly", so the earlier toggle
+ * silently did nothing. The supported route is the `theme` prop on `v-app`:
+ * `provideTheme` reads `props.theme` when it is set, so binding it to reactive
+ * state drives the `.v-theme--*` class on the shell.
+ *
+ * This module owns that state; `App.vue` binds it and the header buttons
+ * change it. MDesign.md section 3 requires both themes.
  */
-
-const STORAGE_KEY = 'forum-theme'
 
 export type ThemeName = 'light' | 'dark'
 
-function readStoredTheme(): ThemeName | null {
-  const stored = localStorage.getItem(STORAGE_KEY)
-  return stored === 'light' || stored === 'dark' ? stored : null
-}
+const STORAGE_KEY = 'forum-theme'
 
 function preferredTheme(): ThemeName {
-  // matchMedia is missing in some non-browser environments. Resolve it to a
-  // value first so an absent implementation reads as "no preference" rather
-  // than throwing on the property access.
+  // matchMedia is missing in some non-browser environments; resolve it to a
+  // value first so an absent implementation reads as "no preference".
   const query = window.matchMedia?.('(prefers-color-scheme: dark)')
   return query?.matches ? 'dark' : 'light'
 }
 
+function initialTheme(): ThemeName {
+  const stored = localStorage.getItem(STORAGE_KEY)
+  if (stored === 'light' || stored === 'dark') {
+    return stored
+  }
+  return preferredTheme()
+}
+
+/*
+ * Module scope on purpose: the app shell and every header button must observe
+ * one value, and there is exactly one shell per document.
+ */
+const themeName = ref<ThemeName>(initialTheme())
+
 export function useThemeToggle() {
-  const theme = useTheme()
-  // A stored choice wins; otherwise follow the operating system. Vuetify's
-  // own current theme is not consulted here because it is whatever the plugin
-  // shipped with, which says nothing about what the visitor asked for.
-  const current = ref<ThemeName>(readStoredTheme() ?? preferredTheme())
-
-  // Vuetify only stamps `.v-theme--dark` when its own current theme has the
-  // `dark` flag. `current` is the *name* of that theme, which is what the
-  // local ref below writes to.
-  watch(
-    current,
-    (name) => {
-      theme.current.value = name
-      localStorage.setItem(STORAGE_KEY, name)
-    },
-    { immediate: true },
-  )
-
-  const isDark = computed(() => current.value === 'dark')
-
-  function toggle() {
-    current.value = current.value === 'dark' ? 'light' : 'dark'
+  function set(name: ThemeName) {
+    themeName.value = name
+    localStorage.setItem(STORAGE_KEY, name)
   }
 
-  return { current, isDark, toggle }
+  function toggle() {
+    set(themeName.value === 'dark' ? 'light' : 'dark')
+  }
+
+  return {
+    /** Bind to `<v-app :theme="themeName">`. */
+    themeName,
+    isDark: computed(() => themeName.value === 'dark'),
+    set,
+    toggle,
+  }
 }

@@ -1,3 +1,4 @@
+import { createPinia } from 'pinia'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import { mount, type MountingOptions } from '@vue/test-utils'
 
@@ -16,15 +17,23 @@ export function mountWithApp(component: unknown, options: MountingOptions<Record
     history: createMemoryHistory(),
     routes: [
       { path: '/', name: 'home', component: { template: '<div />' } },
+      { path: '/login', name: 'login', component: { template: '<div />' } },
+      { path: '/register', name: 'register', component: { template: '<div />' } },
       { path: '/posts/:id', name: 'post-detail', component: { template: '<div />' } },
       { path: '/posts/new', name: 'post-create', component: { template: '<div />' } },
+      { path: '/posts/:id/edit', name: 'post-edit', component: { template: '<div />' } },
+      { path: '/category/:id', name: 'category', component: { template: '<div />' } },
+      { path: '/messages', name: 'messages', component: { template: '<div />' } },
+      { path: '/user/:id', name: 'user-profile', component: { template: '<div />' } },
+      { path: '/settings', name: 'settings', component: { template: '<div />' } },
+      { path: '/admin/reports', name: 'admin-reports', component: { template: '<div />' } },
     ],
   })
 
   return mount(component as never, {
     ...options,
     global: {
-      plugins: [vuetify, router],
+      plugins: [createPinia(), vuetify, router],
       ...options.global,
     },
   })
