@@ -70,7 +70,7 @@ onMounted(() => {
   </v-container>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .message-layout {
   display: grid;
   /*

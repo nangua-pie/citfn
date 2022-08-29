@@ -103,7 +103,7 @@ function onRecall() {
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .bubble {
   /* A bubble never takes more than this much of the row, so a long message
      wraps instead of stretching the transcript. */

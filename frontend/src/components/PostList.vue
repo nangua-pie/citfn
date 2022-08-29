@@ -141,7 +141,7 @@ const TAG_LIMIT = 3
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .post-list {
   background: transparent;
   padding: 0;

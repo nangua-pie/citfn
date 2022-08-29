@@ -114,7 +114,7 @@ watch(page, () => void load())
   </v-container>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .board-header {
   margin-bottom: var(--md-sys-space-4);
 }

@@ -92,7 +92,7 @@ function rowLabel(conversation: Conversation): string {
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .conversation-list {
   overflow-y: auto;
   height: 100%;

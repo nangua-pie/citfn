@@ -19,7 +19,7 @@ const router = useRouter()
   </v-container>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .not-found {
   display: flex;
   flex-direction: column;

@@ -99,7 +99,7 @@ watch(
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .chat-panel {
   display: flex;
   flex-direction: column;

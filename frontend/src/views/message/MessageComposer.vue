@@ -103,7 +103,7 @@ async function onFilePicked(event: Event, isImage: boolean) {
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .composer {
   padding: var(--md-sys-space-3);
   border-top: 1px solid $border;

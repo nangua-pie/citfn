@@ -168,7 +168,7 @@ onMounted(load)
   </section>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .comment-card {
   padding: var(--md-sys-space-5);
 }

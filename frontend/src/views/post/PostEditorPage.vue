@@ -163,7 +163,7 @@ onMounted(async () => {
   </v-container>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .editor-card {
   padding: var(--md-sys-space-5);
 }

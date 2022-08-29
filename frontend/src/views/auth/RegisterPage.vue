@@ -131,7 +131,7 @@ async function submit() {
   </v-container>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .auth-container {
   display: flex;
   justify-content: center;

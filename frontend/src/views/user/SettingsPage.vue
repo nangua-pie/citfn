@@ -173,7 +173,7 @@ onMounted(() => {
   </v-container>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .settings-layout {
   display: grid;
   /*

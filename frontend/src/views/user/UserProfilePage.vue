@@ -140,7 +140,7 @@ watch(() => route.params.id, load)
   </v-container>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .profile-card {
   margin-bottom: var(--md-sys-space-6);
   padding: var(--md-sys-space-5);

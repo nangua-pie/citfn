@@ -118,7 +118,7 @@ onMounted(load)
   </v-container>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .queue-toolbar {
   display: flex;
   align-items: center;

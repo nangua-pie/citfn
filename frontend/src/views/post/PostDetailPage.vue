@@ -198,7 +198,7 @@ watch(() => route.params.id, load)
   </v-container>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .article {
   /* A centred reading column: MDesign.md section 4 caps the measure so prose
      stays readable instead of stretching across a wide monitor. */
