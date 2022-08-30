@@ -18,6 +18,8 @@ const total = ref(0)
 const page = ref(1)
 const keyword = ref('')
 const activeCategoryId = ref<string | null>(null)
+/** Only consulted on narrow screens, where the board rail collapses. */
+const boardsOpen = ref(false)
 
 const PAGE_SIZE = 20
 
@@ -90,7 +92,7 @@ watch(page, () => void load())
             class="search"
             @keyup.enter="submitSearch"
           />
-          <v-btn size="small" @click="submitSearch">Search</v-btn>
+          <v-btn variant="outlined" class="search-button" @click="submitSearch">Search</v-btn>
         </div>
 
         <div class="feed-card panel">
@@ -121,39 +123,57 @@ watch(page, () => void load())
       </main>
 
       <aside class="boards" aria-label="Boards">
-        <h2 class="section-title boards__title">Boards</h2>
-        <v-list density="compact" nav>
-          <v-list-item
-            active-class="board--active"
-            :active="activeCategoryId === null"
-            @click="selectCategory(null)"
-          >
-            <v-list-item-title class="text-body-2">All posts</v-list-item-title>
-          </v-list-item>
-          <v-list-item
-            v-for="category in categories"
-            :key="category.id"
-            active-class="board--active"
-            :active="activeCategoryId === category.id"
-            @click="selectCategory(category.id)"
-          >
-            <!--
-              beta.0 lays bare title and subtitle children of a list item out
-              side by side, which ran the post count into the board name. The
-              header is what stacks them.
-            -->
-            <v-list-item-header>
-              <v-list-item-title class="text-body-2">{{ category.name }}</v-list-item-title>
-              <v-list-item-subtitle class="text-caption">{{ category.postCount }}</v-list-item-subtitle>
-            </v-list-item-header>
-          </v-list-item>
-        </v-list>
+        <!--
+          Shown only once the rail is stacked under the feed, where an always
+          open list would push the posts themselves below the fold.
+        -->
+        <button
+          type="button"
+          class="boards__toggle"
+          :aria-expanded="boardsOpen ? 'true' : 'false'"
+          @click="boardsOpen = !boardsOpen"
+        >
+          <v-icon size="18" class="mr-1">mdi-view-grid-outline</v-icon>
+          Boards
+          <v-spacer />
+          <v-icon size="18">{{ boardsOpen ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+        </button>
+
+        <div class="boards__body" :class="{ 'boards__body--open': boardsOpen }">
+          <h2 class="section-title boards__title">Boards</h2>
+          <v-list density="compact" nav>
+            <v-list-item
+              active-class="board--active"
+              :active="activeCategoryId === null"
+              @click="selectCategory(null)"
+            >
+              <v-list-item-title class="text-body-2">All posts</v-list-item-title>
+            </v-list-item>
+            <v-list-item
+              v-for="category in categories"
+              :key="category.id"
+              active-class="board--active"
+              :active="activeCategoryId === category.id"
+              @click="selectCategory(category.id)"
+            >
+              <!--
+                beta.0 lays bare title and subtitle children of a list item out
+                side by side, which ran the post count into the board name. The
+                header is what stacks them.
+              -->
+              <v-list-item-header>
+                <v-list-item-title class="text-body-2">{{ category.name }}</v-list-item-title>
+                <v-list-item-subtitle class="text-caption">{{ category.postCount }}</v-list-item-subtitle>
+              </v-list-item-header>
+            </v-list-item>
+          </v-list>
+        </div>
       </aside>
     </div>
   </v-container>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .home-layout {
   display: grid;
   /*
@@ -214,14 +234,53 @@ watch(page, () => void load())
   max-width: 280px;
 }
 
+/*
+ * The field and its button read as one control, so they are given the same
+ * box rather than each inheriting a different Vuetify size, and both are
+ * outlined so they match at a glance.
+ */
+.search :deep(.v-field) {
+  min-height: var(--md-sys-control-height);
+}
+
+.search-button {
+  flex: none;
+  height: var(--md-sys-control-height);
+}
+
 :deep(.board--active) {
   background: $accent-soft;
   color: $text-primary;
   font-weight: 600;
 }
 
-/* Below the tablet range the rail is no longer worth its own column: it moves
-   under the feed and stops being sticky. */
+/*
+ * The toggle only appears once the rail is stacked. As a real column the rail
+ * has its own heading and needs no disclosure.
+ */
+.boards__toggle {
+  display: none;
+  align-items: center;
+  width: 100%;
+  padding: var(--md-sys-space-2) var(--md-sys-space-3);
+  border: 0;
+  border-radius: $radius-sm;
+  background: none;
+  color: $text-primary;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--md-sys-motion-short) var(--md-sys-motion-easing);
+}
+
+.boards__toggle:hover {
+  background: $surface-muted;
+}
+
+/* Below the desktop range the rail is no longer worth a column of its own: it
+   moves under the feed, stops being sticky, and folds away so the posts are
+   what the reader actually sees first. */
 @include below($bp-md) {
   .home-layout {
     grid-template-columns: minmax(0, 1fr);
@@ -232,6 +291,19 @@ watch(page, () => void load())
 
   .boards {
     position: static;
+    padding: var(--md-sys-space-1);
+  }
+
+  .boards__toggle {
+    display: flex;
+  }
+
+  .boards__body {
+    display: none;
+  }
+
+  .boards__body--open {
+    display: block;
   }
 }
 

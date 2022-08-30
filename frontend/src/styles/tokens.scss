@@ -94,6 +94,9 @@
   --md-sys-layout-reading: 780px;
   --md-sys-layout-header-height: 56px;
   --md-sys-layout-gutter: 16px;
+  // Height shared by controls meant to sit side by side, so a field and its
+  // button cannot end up at two different sizes.
+  --md-sys-control-height: 40px;
 
   // -- Elevation -----------------------------------------------------------
   // Reserved for overlays (menus, dialogs, the app bar). Plain content uses
