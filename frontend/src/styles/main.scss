@@ -36,6 +36,19 @@ pre {
   word-break: break-word;
 }
 
+/*
+ * Sentence case for button labels. Vuetify 3.0.0-beta.0 uppercases every
+ * button and adds letter-spacing; the `defaults.VBtn.style` entry that used
+ * to counter it is not applied by this release, so the rule is stated here.
+ * MDesign.md section 4 asks for sentence case rather than forced capitals.
+ * The extra `.v-application` lifts specificity over Vuetify's own `.v-btn`
+ * instead of relying on source order.
+ */
+.v-application .v-btn {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
 // -- Focus and motion ------------------------------------------------------
 //
 // A single visible ring for anything keyboard-reachable that Vuetify does not

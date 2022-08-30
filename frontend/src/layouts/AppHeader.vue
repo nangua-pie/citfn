@@ -77,75 +77,67 @@ onMounted(loadCategories)
 </script>
 
 <template>
+  <!--
+    The drawer is a sibling of the app bar, not a child of it. Vuetify
+    positions a drawer through the layout service, which expects it to be a
+    direct child of the app shell; nested inside the bar it resolved to a
+    zero-height box and never appeared. Vue 3 allows a component to have
+    several roots, so both live side by side here.
+  -->
+  <v-navigation-drawer v-model="navOpen" temporary class="nav-drawer">
+    <nav aria-label="Boards">
+      <p class="nav-drawer__heading">Boards</p>
+      <v-list dense>
+        <v-list-item :to="{ name: 'home' }" :active="route.name === 'home'" @click="closeNav">
+          <v-list-item-header>
+            <v-list-item-title>All posts</v-list-item-title>
+          </v-list-item-header>
+        </v-list-item>
+
+        <v-list-item
+          v-for="category in categories"
+          :key="category.id"
+          :to="{ name: 'category', params: { id: category.id } }"
+          :active="activeCategoryId === category.id"
+          @click="closeNav"
+        >
+          <!-- beta.0 needs the header to stack the name above the count. -->
+          <v-list-item-header>
+            <v-list-item-title>{{ category.name }}</v-list-item-title>
+            <v-list-item-subtitle class="text-caption">{{ category.postCount }} posts</v-list-item-subtitle>
+          </v-list-item-header>
+        </v-list-item>
+      </v-list>
+    </nav>
+  </v-navigation-drawer>
+
   <v-app-bar flat height="56" class="app-header">
-    <!--
-      Secondary navigation lives in a drawer on small screens (MDesign.md
-      section 6), so the bar itself only carries the brand and account actions.
-    -->
-    <v-navigation-drawer v-model="navOpen" temporary class="nav-drawer">
-      <nav aria-label="Boards">
-        <p class="nav-drawer__heading">Boards</p>
-        <v-list dense>
-          <v-list-item
-            :to="{ name: 'home' }"
-            :active="route.name === 'home'"
-            @click="closeNav"
-          >
-            <v-list-item-header>
-              <v-list-item-title>All posts</v-list-item-title>
-            </v-list-item-header>
-          </v-list-item>
-
-          <v-list-item
-            v-for="category in categories"
-            :key="category.id"
-            :to="{ name: 'category', params: { id: category.id } }"
-            :active="activeCategoryId === category.id"
-            @click="closeNav"
-          >
-            <!-- beta.0 needs the header to stack the name above the count. -->
-            <v-list-item-header>
-              <v-list-item-title>{{ category.name }}</v-list-item-title>
-              <v-list-item-subtitle class="text-caption">
-                {{ category.postCount }} posts
-              </v-list-item-subtitle>
-            </v-list-item-header>
-          </v-list-item>
-        </v-list>
-      </nav>
-
-      <template #append>
-        <div class="nav-drawer__footer">
-          <v-btn variant="text" size="small" block @click="closeNav">Close</v-btn>
-        </div>
-      </template>
-    </v-navigation-drawer>
-
     <v-btn
       v-if="categories.length"
       icon
       variant="text"
-      class="ml-1 nav-drawer__trigger"
+      class="header-action nav-drawer__trigger"
       aria-label="Open board menu"
+      title="Open board menu"
       @click="navOpen = true"
     >
-      <v-icon>mdi-menu</v-icon>
+      <v-icon size="20">mdi-menu</v-icon>
     </v-btn>
 
     <v-container class="header-inner">
-      <router-link :to="{ name: 'home' }" class="brand text-truncate">Forum</router-link>
+      <router-link :to="{ name: 'home' }" class="brand">Forum</router-link>
 
-      <v-spacer />
-
-      <!-- Desktop only; the drawer above carries the same links on mobile. -->
-      <v-menu v-if="categories.length" class="header-boards">
+      <!-- Desktop only; the drawer carries the same links on mobile. -->
+      <v-menu v-if="categories.length">
         <!--
           Vuetify 3.0.0-beta.0 exposes the activator handlers as one `props`
           object. The stable 3.x `{ on, attrs }` pair does not exist in this
           version, and binding `undefined` would leave the trigger inert.
         -->
         <template #activator="{ props: activatorProps }">
-          <v-btn variant="text" size="small" v-bind="activatorProps" class="mr-2">Boards</v-btn>
+          <v-btn variant="text" class="header-action header-boards mr-2" v-bind="activatorProps">
+            Boards
+          </v-btn>
         </template>
         <v-list dense>
           <v-list-item
@@ -165,79 +157,101 @@ onMounted(loadCategories)
         </v-list>
       </v-menu>
 
+      <v-spacer />
+
       <!--
-        Icon-only control, so it carries both an accessible name and a title.
+        One row at one height. Every control in the group is forced to the same
+        box by .header-action, so the bar no longer mixes 32px and 40px buttons.
+        New post is the only filled control here; everything else is a plain
+        text or icon action, which is what makes it read as the primary one.
       -->
-      <v-btn
-        icon
-        variant="text"
-        :aria-label="messages.unread ? `Messages, ${messages.unread} unread` : 'Messages'"
-        :title="messages.unread ? `Messages, ${messages.unread} unread` : 'Messages'"
-        @click="openMessages"
-      >
-        <v-badge :content="messages.unread" :model-value="messages.unread > 0" color="error" overlap>
-          <v-icon>mdi-message-text-outline</v-icon>
-        </v-badge>
-      </v-btn>
-
-      <v-btn
-        icon
-        variant="text"
-        :aria-label="isDark ? 'Switch to light theme' : 'Switch to dark theme'"
-        :title="isDark ? 'Switch to light theme' : 'Switch to dark theme'"
-        @click="toggle"
-      >
-        <v-icon>{{ isDark ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
-      </v-btn>
-
-      <template v-if="auth.isAuthenticated">
+      <div class="header-actions">
         <v-btn
-          color="primary"
-          size="small"
-          :to="{ name: 'post-create' }"
-          class="ml-2 header-new-post"
+          icon
+          variant="text"
+          class="header-action"
+          :aria-label="messages.unread ? `Messages, ${messages.unread} unread` : 'Messages'"
+          :title="messages.unread ? `Messages, ${messages.unread} unread` : 'Messages'"
+          @click="openMessages"
         >
-          New post
+          <v-badge :content="messages.unread" :model-value="messages.unread > 0" color="error" overlap>
+            <v-icon size="20">mdi-message-text-outline</v-icon>
+          </v-badge>
         </v-btn>
-        <v-menu>
-          <template #activator="{ props: activatorProps }">
-            <v-btn
-              icon
-              variant="text"
-              v-bind="activatorProps"
-              :aria-label="`Account menu for ${auth.profile?.nickname ?? 'your account'}`"
-            >
-              <v-avatar size="28">
-                <v-img v-if="auth.profile?.avatarUrl" :src="auth.profile.avatarUrl" :alt="''" />
-                <span v-else>{{ auth.profile?.nickname?.charAt(0) }}</span>
-              </v-avatar>
-            </v-btn>
-          </template>
-          <v-list dense>
-            <v-list-item @click="openProfile">
-              <v-list-item-title>Profile</v-list-item-title>
-            </v-list-item>
-            <v-list-item :to="{ name: 'settings' }">
-              <v-list-item-title>Settings</v-list-item-title>
-            </v-list-item>
-            <v-divider />
-            <v-list-item @click="signOut">
-              <v-list-item-title>Sign out</v-list-item-title>
-            </v-list-item>
-          </v-list>
-        </v-menu>
-      </template>
-      <template v-else>
-        <v-btn variant="text" size="small" :to="{ name: 'login' }">Sign in</v-btn>
-        <v-btn color="primary" size="small" :to="{ name: 'register' }" class="ml-2">
-          Register
+
+        <v-btn
+          icon
+          variant="text"
+          class="header-action"
+          :aria-label="isDark ? 'Switch to light theme' : 'Switch to dark theme'"
+          :title="isDark ? 'Switch to light theme' : 'Switch to dark theme'"
+          @click="toggle"
+        >
+          <v-icon size="20">{{ isDark ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
         </v-btn>
-      </template>
+
+        <template v-if="auth.isAuthenticated">
+          <v-btn
+            color="primary"
+            class="header-action header-action--filled ml-2"
+            :to="{ name: 'post-create' }"
+          >
+            <v-icon size="18" class="mr-1">mdi-pencil-outline</v-icon>
+            New post
+          </v-btn>
+
+          <v-menu>
+            <template #activator="{ props: activatorProps }">
+              <v-btn
+                icon
+                variant="text"
+                class="header-action ml-1"
+                v-bind="activatorProps"
+                :aria-label="`Account menu for ${auth.profile?.nickname ?? 'your account'}`"
+              >
+                <v-avatar size="28">
+                  <v-img v-if="auth.profile?.avatarUrl" :src="auth.profile.avatarUrl" alt="" />
+                  <span v-else>{{ auth.profile?.nickname?.charAt(0) }}</span>
+                </v-avatar>
+              </v-btn>
+            </template>
+            <v-list dense>
+              <v-list-item @click="openProfile">
+                <v-list-item-title>Profile</v-list-item-title>
+              </v-list-item>
+              <v-list-item :to="{ name: 'settings' }">
+                <v-list-item-title>Settings</v-list-item-title>
+              </v-list-item>
+              <v-divider />
+              <v-list-item @click="signOut">
+                <v-list-item-title>Sign out</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+        </template>
+
+        <template v-else>
+          <v-btn
+            variant="text"
+            class="header-action header-signin ml-1"
+            :to="{ name: 'login' }"
+          >
+            Sign in
+          </v-btn>
+          <v-btn
+            color="primary"
+            class="header-action header-action--filled ml-1"
+            :to="{ name: 'register' }"
+          >
+            Register
+          </v-btn>
+        </template>
+      </div>
     </v-container>
   </v-app-bar>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .app-header {
   border-bottom: 1px solid $border;
   background: $surface;
@@ -246,6 +260,10 @@ onMounted(loadCategories)
 .brand {
   font-weight: 600;
   font-size: var(--md-sys-typescale-title-md);
+  /* The name is short and identifies the site; it must never be the thing
+     that gets squeezed out on a narrow bar. */
+  flex: none;
+  white-space: nowrap;
   text-decoration: none;
   color: $text-primary;
 }
@@ -255,6 +273,48 @@ onMounted(loadCategories)
   align-items: center;
   width: 100%;
   padding: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: 2px;
+}
+
+/*
+ * One box for every control in the bar. Vuetify's own size scale gives a
+ * plain button 36px and an icon button a different box again, which is what
+ * made the row look assembled rather than designed.
+ *
+ * The selector is anchored to .app-header on purpose. Vuetify sets button
+ * height with `.v-btn.v-btn--density-default`, which is also two classes, so
+ * a single class here ties with it and loses on source order. Descending from
+ * the bar out-specifies it without resorting to !important.
+ */
+.app-header .header-action {
+  height: 40px;
+}
+
+/*
+ * Icon-only controls are square. Vuetify gives an icon button 48px of width,
+ * a third more than the height set above, and the three of them are what push
+ * the signed-out row past the edge of a phone.
+ */
+.app-header .header-action.v-btn--icon {
+  width: 40px;
+  min-width: 40px;
+  padding: 0;
+}
+
+/* The text buttons size to their label instead. */
+.app-header .header-action--filled,
+.app-header .header-signin {
+  min-width: 0;
+}
+
+.app-header .header-action--filled {
+  padding: 0 var(--md-sys-space-4);
 }
 
 /* MD3 elevates a top app bar on scroll; the flat bar here uses a border
@@ -268,10 +328,6 @@ onMounted(loadCategories)
   font-size: var(--md-sys-typescale-label-sm);
   font-weight: 600;
   color: $text-muted;
-}
-
-.nav-drawer__footer {
-  padding: var(--md-sys-space-2) var(--md-sys-space-3) var(--md-sys-space-3);
 }
 
 /* Selection state is carried by a filled container and a heavier weight, not
@@ -294,8 +350,37 @@ onMounted(loadCategories)
 }
 
 @include below($bp-md) {
-  .header-boards,
-  .header-new-post {
+  .header-boards {
+    display: none;
+  }
+}
+
+/* On a 320px bar the wordmark, three controls and two buttons have to share
+   one row. Reclaiming the gutters and tightening the filled button is enough
+   to keep the brand whole instead of truncating it to "F...". */
+@include below($bp-xs) {
+  .header-inner {
+    padding: 0 var(--md-sys-space-1);
+  }
+
+  .app-header .header-action--filled {
+    padding: 0 var(--md-sys-space-3);
+  }
+
+  .brand {
+    font-size: var(--md-sys-typescale-title-sm);
+  }
+}
+
+/*
+ * Below roughly 360px the signed-out row still does not fit. "Register"
+ * stays because it is the primary action, and the register page links back to
+ * sign in, so nothing becomes unreachable. This sits below the smallest
+ * breakpoint in MDesign.md section 11 because it is a consequence of how many
+ * controls fit, not a layout breakpoint in its own right.
+ */
+@media (max-width: 359px) {
+  .header-signin {
     display: none;
   }
 }

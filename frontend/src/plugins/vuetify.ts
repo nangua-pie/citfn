@@ -45,8 +45,10 @@ export default createVuetify({
   },
   defaults: {
     // MD3 shape scale: 8px controls, 12px containers (section 9).
+    // Button casing is not set here: this release ignores a `style` entry in
+    // the defaults, so `text-transform` is corrected in styles/main.scss.
     VCard: { rounded: 'md', elevation: 0 },
-    VBtn: { rounded: 'sm', style: 'text-transform: none; letter-spacing: 0;' },
+    VBtn: { rounded: 'sm' },
     VChip: { rounded: 'sm' },
     VAlert: { rounded: 'md' },
     VTextField: { variant: 'outlined', density: 'comfortable' },
