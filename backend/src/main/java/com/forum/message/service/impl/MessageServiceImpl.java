@@ -338,6 +338,10 @@ public class MessageServiceImpl implements MessageService {
         ImConversation mine = conversationMapper.selectByParticipants(currentUserId, message.getSenderId());
         if (mine != null) {
             conversationMapper.clearUnread(mine.getId(), currentUserId);
+            // The conversation list is cached, and its rows carry a per
+            // conversation unread count. Without dropping the cache the badge
+            // beside the thread would keep the old number until the TTL.
+            invalidateConversations(currentUserId);
         }
         cacheUnread(currentUserId, conversationMapper.sumUnread(currentUserId));
         pushService.pushMessageRead(message.getSenderId(), messageId, message.getConversationId());
@@ -352,6 +356,9 @@ public class MessageServiceImpl implements MessageService {
         messageMapper.markConversationRead(conversationId,
                 peer == null ? conversationId : peer.getId(), currentUserId, now);
         conversationMapper.clearUnread(conversationId, currentUserId);
+        // Same reason as in markMessageRead: the cached list still holds the
+        // pre-read count for this row.
+        invalidateConversations(currentUserId);
         int unread = conversationMapper.sumUnread(currentUserId);
         cacheUnread(currentUserId, unread);
         pushService.pushMessageRead(conversation.getTargetUserId(), conversationId, conversationId);

@@ -275,6 +275,36 @@ class MessageServiceImplTest {
         verify(conversationMapper, never()).clearUnread(eq(CONVERSATION_ID), eq(SENDER_ID));
     }
 
+    @Test
+    @DisplayName("reading a conversation drops the cached list so the row badge clears too")
+    void markConversationReadInvalidatesCachedConversationList() {
+        when(conversationMapper.selectOwned(CONVERSATION_ID, RECEIVER_ID)).thenReturn(conversation());
+        when(conversationMapper.sumUnread(RECEIVER_ID)).thenReturn(0);
+
+        service.markConversationRead(RECEIVER_ID, CONVERSATION_ID);
+
+        // The cached conversation rows carry their own unread count, so
+        // clearing the column without dropping the cache would leave the badge
+        // beside the thread showing the old number.
+        verify(redisTemplate).delete(RedisKeys.imConversation(RECEIVER_ID));
+    }
+
+    @Test
+    @DisplayName("marking a single message read drops the cached conversation list")
+    void markMessageReadInvalidatesCachedConversationList() {
+        ImMessage message = message(5L, "hello");
+        message.setSenderId(SENDER_ID);
+        message.setReceiverId(RECEIVER_ID);
+        when(messageMapper.selectById(5L)).thenReturn(message);
+        when(conversationMapper.selectByParticipants(RECEIVER_ID, SENDER_ID))
+                .thenReturn(receiverConversation());
+        when(conversationMapper.sumUnread(RECEIVER_ID)).thenReturn(0);
+
+        service.markMessageRead(RECEIVER_ID, 5L);
+
+        verify(redisTemplate).delete(RedisKeys.imConversation(RECEIVER_ID));
+    }
+
     // --- recall --------------------------------------------------------
 
     @Test

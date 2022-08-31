@@ -258,4 +258,38 @@ class MessageControllerTest {
         org.assertj.core.api.Assertions.assertThat(response.getData()).isEqualTo("payload");
         org.assertj.core.api.Assertions.assertThat(response.getTraceId()).isNull();
     }
+
+    @Test
+    @DisplayName("marking a conversation read is delegated to the service")
+    void markConversationReadDelegatesToService() throws Exception {
+        signIn();
+
+        mockMvc.perform(post("/api/im/conversations/100/read"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0));
+
+        verify(messageService).markConversationRead(USER_ID, 100L);
+    }
+
+    @Test
+    @DisplayName("marking a conversation read needs a session")
+    void markConversationReadRequiresASession() throws Exception {
+        mockMvc.perform(post("/api/im/conversations/100/read"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(40100));
+
+        verify(messageService, never()).markConversationRead(any(), any());
+    }
+
+    @Test
+    @DisplayName("a conversation the caller does not own reads as 40400")
+    void markConversationReadHidesForeignConversations() throws Exception {
+        signIn();
+        org.mockito.Mockito.doThrow(BusinessException.notFound("conversation not found"))
+                .when(messageService).markConversationRead(USER_ID, 999L);
+
+        mockMvc.perform(post("/api/im/conversations/999/read"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(40400));
+    }
 }

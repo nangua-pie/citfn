@@ -89,6 +89,18 @@ public class MessageController {
                 CurrentUser.requireUserId(), conversationId, beforeId, size));
     }
 
+    /**
+     * Marks a whole thread read.
+     *
+     * <p>Opening a conversation is what clears its badge, so this is called
+     * when the reader selects a thread rather than per bubble.
+     */
+    @PostMapping("/conversations/{conversationId}/read")
+    public ApiResponse<Void> markConversationRead(@PathVariable Long conversationId) {
+        messageService.markConversationRead(CurrentUser.requireUserId(), conversationId);
+        return ApiResponse.success();
+    }
+
     @PostMapping("/messages")
     public ApiResponse<ImMessageVO> sendMessage(@Valid @RequestBody SendMessageRequest request) {
         return ApiResponse.success(messageService.sendMessage(CurrentUser.requireUserId(), request));
