@@ -45,6 +45,17 @@ export function markMessageRead(messageId: string) {
   return post<void>(`/api/im/messages/${messageId}/read`)
 }
 
+/**
+ * Clears a whole thread's unread state.
+ *
+ * Opening a conversation is what marks it read, so this is the call that has
+ * to happen when a thread is selected; the per message variant only covers the
+ * read receipts on a single bubble.
+ */
+export function markConversationRead(conversationId: string) {
+  return post<void>(`/api/im/conversations/${conversationId}/read`)
+}
+
 export function recallMessage(messageId: string) {
   return post<void>(`/api/im/messages/${messageId}/recall`)
 }

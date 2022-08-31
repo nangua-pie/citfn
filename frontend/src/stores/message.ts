@@ -5,6 +5,7 @@ import {
   deleteConversation as deleteConversationApi,
   listConversations,
   listMessages,
+  markConversationRead as markConversationReadApi,
   markMessageRead as markMessageReadApi,
   openConversation as openConversationApi,
   recallMessage as recallMessageApi,
@@ -122,7 +123,13 @@ export const useMessageStore = defineStore('message', () => {
     hasMore.value = true
     loading.value = true
     try {
-      const firstPage = await listMessages(conversationId, null, 30)
+      // Opening a thread is what marks it read, so the call is part of
+      // selecting it. Zeroing the local row on its own left the server, and
+      // so every later reload, still reporting the old count.
+      const [firstPage] = await Promise.all([
+        listMessages(conversationId, null, 30),
+        markConversationReadApi(conversationId),
+      ])
       messages.value = sortByTime(firstPage)
       oldestLoadedId.value = messages.value[0]?.messageId ?? null
       // A full page implies older history may sit behind the cursor.
