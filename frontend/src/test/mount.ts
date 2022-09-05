@@ -11,8 +11,15 @@ import type { Post } from '@/types'
  * Components are mounted against the app's real Vuetify plugin and a memory
  * router, so a `router-link` resolves the way it does in the browser instead
  * of hitting a stub. A fresh router per test keeps route state from leaking.
+ *
+ * The Pinia instance is injectable so a test can seed a store before mount;
+ * pass one in to assert on signed-in behaviour.
  */
-export function mountWithApp(component: unknown, options: MountingOptions<Record<string, unknown>> = {}) {
+export function mountWithApp(
+  component: unknown,
+  options: MountingOptions<Record<string, unknown>> = {},
+  pinia = createPinia(),
+) {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -22,6 +29,7 @@ export function mountWithApp(component: unknown, options: MountingOptions<Record
       { path: '/posts/:id', name: 'post-detail', component: { template: '<div />' } },
       { path: '/posts/new', name: 'post-create', component: { template: '<div />' } },
       { path: '/posts/:id/edit', name: 'post-edit', component: { template: '<div />' } },
+      { path: '/collections', name: 'collections', component: { template: '<div />' } },
       { path: '/category/:id', name: 'category', component: { template: '<div />' } },
       { path: '/messages', name: 'messages', component: { template: '<div />' } },
       { path: '/user/:id', name: 'user-profile', component: { template: '<div />' } },
@@ -33,7 +41,7 @@ export function mountWithApp(component: unknown, options: MountingOptions<Record
   return mount(component as never, {
     ...options,
     global: {
-      plugins: [createPinia(), vuetify, router],
+      plugins: [pinia, vuetify, router],
       ...options.global,
     },
   })

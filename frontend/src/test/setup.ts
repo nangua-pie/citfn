@@ -38,6 +38,19 @@ if (typeof globalThis.ResizeObserver === 'undefined') {
   })
 }
 
+/**
+ * jsdom 19 leaves `document.scrollingElement` undefined. Vuetify's overlay
+ * walks up to the scroll parent to position a menu and reads `clientWidth` off
+ * whatever it finds, so an open menu turns into an unhandled rejection. The
+ * document element is what a browser reports here.
+ */
+if (typeof document !== 'undefined' && !document.scrollingElement) {
+  Object.defineProperty(document, 'scrollingElement', {
+    configurable: true,
+    get: () => document.documentElement,
+  })
+}
+
 // Marks this file as a module, so `--isolatedModules` does not treat the
 // shim above as a global script.
 export {}

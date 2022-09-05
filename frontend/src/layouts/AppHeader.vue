@@ -109,6 +109,22 @@ onMounted(loadCategories)
         </v-list-item>
       </v-list>
     </nav>
+
+    <!--
+      Saved posts has no icon control in the bar: the row of controls was
+      already at the limit of a 320px bar, and the account menu only exists on
+      wider screens. The drawer is where it stays reachable on a phone.
+    -->
+    <nav v-if="auth.isAuthenticated" aria-label="Your account">
+      <p class="nav-drawer__heading">You</p>
+      <v-list dense>
+        <v-list-item :to="{ name: 'collections' }" @click="closeNav">
+          <v-list-item-header>
+            <v-list-item-title>Saved posts</v-list-item-title>
+          </v-list-item-header>
+        </v-list-item>
+      </v-list>
+    </nav>
   </v-navigation-drawer>
 
   <v-app-bar flat height="56" class="app-header">
@@ -218,6 +234,9 @@ onMounted(loadCategories)
             <v-list dense>
               <v-list-item @click="openProfile">
                 <v-list-item-title>Profile</v-list-item-title>
+              </v-list-item>
+              <v-list-item :to="{ name: 'collections' }">
+                <v-list-item-title>Saved posts</v-list-item-title>
               </v-list-item>
               <v-list-item :to="{ name: 'settings' }">
                 <v-list-item-title>Settings</v-list-item-title>

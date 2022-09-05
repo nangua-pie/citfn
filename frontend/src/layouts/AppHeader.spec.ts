@@ -1,8 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick } from 'vue'
+import { createPinia, setActivePinia } from 'pinia'
 import { VApp } from 'vuetify/components'
 
 import AppHeader from '@/layouts/AppHeader.vue'
+import { tokenStorage } from '@/api/http'
+import { useAuthStore } from '@/stores/auth'
 import { useThemeToggle } from '@/composables/useThemeToggle'
 import { mountWithApp } from '@/test/mount'
 
@@ -14,7 +17,20 @@ vi.mock('@/api/category', () => ({
 }))
 
 vi.mock('@/utils/ws', () => ({
-  imSocket: { connect: vi.fn(), disconnect: vi.fn() },
+  imSocket: {
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+    onEvent: vi.fn(),
+    onStateChange: vi.fn(),
+    send: vi.fn(() => false),
+  },
+}))
+
+// The header opens the socket as soon as a session exists, which then asks
+// for the conversation list and the unread total.
+vi.mock('@/api/message', () => ({
+  listConversations: vi.fn(async () => []),
+  unreadCount: vi.fn(async () => ({ unreadCount: 0 })),
 }))
 
 /**
@@ -117,6 +133,73 @@ describe('AppHeader board navigation', () => {
     // The exact modifier is an internal detail of this build; what matters is
     // that the drawer reacts to the button at all.
     expect(after).not.toBe(before)
+    wrapper.unmount()
+  })
+})
+
+describe('AppHeader saved posts entry', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    useThemeToggle().set('light')
+  })
+
+  /**
+   * Seeds a session so the header renders its signed-in controls. The store is
+   * created against the same Pinia instance the component mounts with.
+   */
+  function signIn() {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const auth = useAuthStore()
+    auth.profile = {
+      id: '5',
+      username: 'ada',
+      nickname: 'Ada',
+      avatarUrl: null,
+      bio: null,
+      level: 1,
+      points: 0,
+      status: 1,
+      createTime: '2022-08-27 10:00:00',
+    }
+    tokenStorage.set('access-token', 'refresh-token')
+    return pinia
+  }
+
+  it('hides the saved posts entry while signed out', async () => {
+    const wrapper = mountWithApp(Shell, { attachTo: document.body })
+    await settle()
+
+    const entries = wrapper.findAll('.v-list-item-title').filter((t) => t.text() === 'Saved posts')
+    expect(entries).toHaveLength(0)
+    wrapper.unmount()
+  })
+
+  it('puts saved posts in the account menu once signed in', async () => {
+    const pinia = signIn()
+    const wrapper = mountWithApp(Shell, { attachTo: document.body }, pinia)
+    await settle()
+
+    const accountButton = buttonWithLabel(wrapper, 'account menu')
+    expect(accountButton).toBeDefined()
+    await accountButton!.trigger('click')
+    await settle()
+
+    const entry = wrapper.findAll('.v-list-item-title').find((t) => t.text() === 'Saved posts')
+    expect(entry).toBeDefined()
+    wrapper.unmount()
+  })
+
+  it('puts saved posts in the drawer, where a phone can reach it', async () => {
+    const pinia = signIn()
+    const wrapper = mountWithApp(Shell, { attachTo: document.body }, pinia)
+    await settle()
+
+    const drawer = document.querySelector('.v-navigation-drawer')
+    const entries = Array.from(drawer?.querySelectorAll('.v-list-item-title') ?? []).filter(
+      (t) => t.textContent === 'Saved posts',
+    )
+    expect(entries.length).toBeGreaterThan(0)
     wrapper.unmount()
   })
 })
