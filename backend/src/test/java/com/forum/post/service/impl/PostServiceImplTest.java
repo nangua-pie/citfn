@@ -1,11 +1,14 @@
 package com.forum.post.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.forum.common.api.PageResult;
 import com.forum.category.entity.Category;
 import com.forum.category.mapper.CategoryMapper;
 import com.forum.common.exception.BusinessException;
 import com.forum.post.dto.CreatePostRequest;
 import com.forum.post.dto.PostQuery;
+import com.forum.post.dto.PostVO;
 import com.forum.post.entity.Post;
 import com.forum.post.entity.PostCollect;
 import com.forum.post.entity.PostContent;
@@ -258,6 +261,40 @@ class PostServiceImplTest {
         assertThat(service.toggleCollect(42L, AUTHOR_ID).getActive()).isFalse();
         verify(collectMapper).insert(any(PostCollect.class));
         verify(collectMapper).deleteById(88L);
+    }
+
+    @Test
+    @DisplayName("my collections lists the bookmarked posts and never a deleted row")
+    void listMyCollectionsReturnsBookmarkedPosts() {
+        when(collectMapper.selectPostIdsByUser(AUTHOR_ID)).thenReturn(Collections.singletonList(42L));
+        Page<Post> page = new Page<>(1, 20);
+        page.setRecords(Collections.singletonList(post()));
+        page.setTotal(1);
+        when(postMapper.selectPage(any(), any())).thenReturn(page);
+
+        PageResult<PostVO> result = service.listMyCollections(AUTHOR_ID, 1L, 20L);
+
+        assertThat(result.getTotal()).isEqualTo(1);
+        assertThat(result.getRecords()).hasSize(1);
+        assertThat(result.getRecords().get(0).getId()).isEqualTo(42L);
+
+        @SuppressWarnings({"rawtypes", "unchecked"})
+        ArgumentCaptor<QueryWrapper> query = ArgumentCaptor.forClass(QueryWrapper.class);
+        verify(postMapper).selectPage(any(), query.capture());
+        // A bookmark must not be able to resurrect a row the author deleted.
+        assertThat(query.getValue().getSqlSegment()).contains("is_deleted");
+    }
+
+    @Test
+    @DisplayName("my collections is empty, and skips the query, when nothing is bookmarked")
+    void listMyCollectionsEmptyWithoutBookmarks() {
+        when(collectMapper.selectPostIdsByUser(AUTHOR_ID)).thenReturn(Collections.emptyList());
+
+        PageResult<PostVO> result = service.listMyCollections(AUTHOR_ID, 1L, 20L);
+
+        assertThat(result.getRecords()).isEmpty();
+        assertThat(result.getTotal()).isZero();
+        verify(postMapper, never()).selectPage(any(), any());
     }
 
     @Test
