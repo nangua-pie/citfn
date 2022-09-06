@@ -90,9 +90,14 @@ const router = createRouter({
  * `requiresPermission` is checked against the signed in user's authorities.
  * The backend enforces the same rule, so this only avoids showing a screen the
  * user cannot use.
+ *
+ * The first navigation waits for the stored session to be checked. Without it
+ * a signed in user who opened a protected URL directly, or reloaded one, was
+ * bounced to the login page because the profile had not come back yet.
  */
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   const auth = useAuthStore()
+  await auth.ensureSession()
 
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     return { name: 'login', query: { redirect: to.fullPath } }

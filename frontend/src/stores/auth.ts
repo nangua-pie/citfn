@@ -57,6 +57,24 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /**
+   * Resolves once the stored session has been checked, at most one request.
+   *
+   * The route guard has to wait on this. On a hard load the profile is still
+   * null while `/users/me` is in flight, so a guard that only looked at
+   * `isAuthenticated` would send a signed in user to the login page whenever
+   * they opened a protected route directly or reloaded one. Sharing one
+   * promise between the guard and App keeps the restore to a single call.
+   */
+  let sessionReady: Promise<void> | null = null
+
+  function ensureSession() {
+    if (!sessionReady) {
+      sessionReady = restoreSession()
+    }
+    return sessionReady
+  }
+
   async function logout() {
     try {
       await logoutApi()
@@ -82,6 +100,7 @@ export const useAuthStore = defineStore('auth', () => {
     register,
     logout,
     restoreSession,
+    ensureSession,
     updatePassword,
     clear,
   }

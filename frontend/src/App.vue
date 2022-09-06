@@ -8,9 +8,11 @@ const auth = useAuthStore()
 const { themeName } = useThemeToggle()
 
 onMounted(() => {
-  // Restores a session from a stored refresh token so a reload keeps the user
-  // signed in without prompting.
-  auth.restoreSession()
+  // The route guard has already asked for this on the first navigation, so in
+  // the common case this resolves immediately rather than issuing a second
+  // request. It is kept here so a session is still restored if the app is ever
+  // mounted without a navigation.
+  void auth.ensureSession()
 })
 </script>
 
