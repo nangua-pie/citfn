@@ -107,14 +107,30 @@ export const useMessageStore = defineStore('message', () => {
     connected.value = false
   }
 
-  async function loadConversations() {
-    loading.value = true
-    try {
-      conversations.value = await listConversations()
-    } finally {
-      loading.value = false
+async function loadConversations() {
+  loading.value = true
+  try {
+    conversations.value = await listConversations()
+    /*
+     * Land on a thread rather than on an empty panel. With nothing selected
+     * the chat pane renders its "select a conversation" placeholder, which
+     * means no transcript and no composer at all -- the message page looks
+     * broken on arrival rather than merely empty.
+     *
+     * The current thread is kept when it still exists, so the reload button
+     * does not throw the reader back to the first conversation.
+     */
+    const keepCurrent = conversations.value.some((c) => c.id === activeConversationId.value)
+    if (!keepCurrent) {
+      const first = conversations.value[0]
+      if (first) {
+        await selectConversation(first.id)
+      }
     }
+  } finally {
+    loading.value = false
   }
+}
 
   async function selectConversation(conversationId: string) {
     activeConversationId.value = conversationId
