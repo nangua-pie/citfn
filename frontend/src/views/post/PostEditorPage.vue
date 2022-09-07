@@ -31,7 +31,26 @@ const isEdit = computed(() => postId.value !== null)
  * has no `item-title` / `item-value` props, so the board list is reshaped
  * here instead of in the template.
  */
-const boardChoices = computed(() => selectOptions(categories.value.map((c) => ({ title: c.name, value: c.id }))))
+interface BoardOption {
+  title: string
+  value: string
+}
+
+const boardOptions = computed<BoardOption[]>(() => categories.value.map((c) => ({ title: c.name, value: c.id })))
+const boardChoices = computed(() => selectOptions(boardOptions.value))
+
+/**
+ * beta.0 builds the displayed selection from the model value alone: it runs
+ * the same title/value reader over whatever is bound and never looks it up in
+ * `items`, so a model holding the id renders as the raw id. Binding the whole
+ * option is what makes the board name appear.
+ */
+const selectedBoard = computed<BoardOption | undefined>({
+  get: () => boardOptions.value.find((option) => option.value === form.value.categoryId),
+  set: (option) => {
+    form.value.categoryId = option?.value ?? ''
+  },
+})
 
 /** Sanitised before rendering, exactly as on the detail page. */
 const renderedPreview = computed(() => renderMarkdown(form.value.content))
@@ -108,7 +127,18 @@ onMounted(async () => {
 
     <v-card class="editor-card panel">
         <div class="editor-field">
-          <v-select v-model="form.categoryId" :items="boardChoices" label="Board" />
+          <!--
+            The model is the option object rather than its id, because beta.0
+            derives the displayed label from the model alone and never looks it
+            up in `items`. `as never` is the escape hatch for a prop type that
+            omits what the runtime actually reads.
+          -->
+          <v-select
+            :model-value="selectedBoard as never"
+            :items="boardChoices"
+            label="Board"
+            @update:model-value="selectedBoard = $event"
+          />
         </div>
 
         <div class="editor-field">
