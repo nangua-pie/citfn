@@ -80,6 +80,14 @@ onMounted(() => {
    */
   grid-template-columns: 300px minmax(0, 1fr);
   /*
+   * The row is pinned to the container height instead of being left to size
+   * itself. The grid has a fixed height, but an implicit auto row still grows
+   * to fit its content, which pushed the composer past the bottom of the
+   * viewport. minmax(0, ...) lets the row shrink below that content size so the
+   * transcript scrolls and the composer stays where it belongs.
+   */
+  grid-template-rows: minmax(0, 1fr);
+  /*
    * The transcript scrolls inside this box, so it has to be bounded to the
    * space the header and page padding leave. dvh keeps it correct while a
    * mobile browser's chrome slides in and out; the vh line is the fallback for
