@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 
 import { listCategories } from '@/api/category'
 import { createPost, getPost, updatePost } from '@/api/post'
+import MarkdownEditor from '@/components/editor/MarkdownEditor.vue'
 import { renderMarkdown } from '@/utils/markdown'
 import { routeId } from '@/utils/snowflake'
 import { selectOptions } from '@/utils/select'
@@ -157,13 +158,7 @@ onMounted(async () => {
             Editor and preview occupy the same slot, so toggling between them
             does not move the fields below.
           -->
-          <v-textarea
-            v-show="!preview"
-            v-model="form.content"
-            label="Body (Markdown)"
-            rows="14"
-            hide-details
-          />
+          <MarkdownEditor v-show="!preview" v-model="form.content" />
           <div v-if="preview" class="editor-preview panel-sunken">
             <div v-if="form.content.trim()" class="markdown-body" v-html="renderedPreview" />
             <p v-else class="state-message">Nothing to preview yet.</p>
