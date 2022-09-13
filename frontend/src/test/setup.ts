@@ -51,6 +51,24 @@ if (typeof document !== 'undefined' && !document.scrollingElement) {
   })
 }
 
+/**
+ * jsdom 19 has no Web Animations API. Vuetify's field calls `el.animate`
+ * from a watcher when it mounts, so without this every component using a text
+ * field throws during mount and the failure surfaces far from its cause.
+ */
+if (typeof Element !== 'undefined' && !Element.prototype.animate) {
+  // Typed as a stub rather than a full Animation: the fields Vuetify reads are
+  // present, and nothing under test asserts on the rest.
+  Element.prototype.animate = function animate() {
+    return {
+      finished: Promise.resolve(),
+      cancel() {},
+      finish() {},
+      onfinish: null,
+    } as unknown as Animation
+  }
+}
+
 // Marks this file as a module, so `--isolatedModules` does not treat the
 // shim above as a global script.
 export {}
